@@ -1,0 +1,45 @@
+spring:
+  profiles:
+    active: DEV
+  application:
+    name: ruota
+
+security:
+  admin:
+    password: ${ADMIN_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET:x}
+  expiration: 86400000 # 24 ore in millisecondi
+  #expiration:  60000 #1 minuto in millisecondi
+
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+swagger:
+  server:
+    url: ${SWAGGER_SERVER_URL:8083}
+
+server:
+  servlet:
+    context-path: /api/ruota
+  port: ${PORT:8083}
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE:classpath:ruota-keystore.p12}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: ruota
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: ${SHOW_SQL:INFO}
+        orm:
+          jdbc:
+            bind: ${SHOW_SQL_PARAMETER:INFO}
