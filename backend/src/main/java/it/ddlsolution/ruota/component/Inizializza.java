@@ -1,5 +1,6 @@
 package it.ddlsolution.ruota.component;
 
+import it.ddlsolution.ruota.dto.Giocatore;
 import it.ddlsolution.ruota.dto.Tabellone;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,12 +11,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
-public class InitTabelloni {
+public class Inizializza {
     @Bean
-    public List<Tabellone> lista() {
+    public List<Tabellone> tabelloni() {
         List<Tabellone> tabelloni = new ArrayList<>();
         try (InputStream inputStream = new ClassPathResource("ruota_fortuna_definizioni.csv").getInputStream();
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("windows-1252")))) {

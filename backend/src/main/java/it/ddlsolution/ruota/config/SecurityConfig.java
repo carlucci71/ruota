@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(expiredJwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
                         // Permetti auth endpoints
-                        .requestMatchers("/versione").permitAll()
+                        .requestMatchers("/game/**").permitAll()
+                        .requestMatchers("/giocatore/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
