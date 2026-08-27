@@ -9,7 +9,7 @@ security:
     password: ${ADMIN_PASSWORD}
 
 jwt:
-  secret: ${JWT_SECRET:x}
+  secret: 0349dffb83027c2e2ba5b1cdf14bd63c5bdf9f809466c056999cfb754bf4092b
   expiration: 86400000 # 24 ore in millisecondi
   #expiration:  60000 #1 minuto in millisecondi
 
@@ -23,7 +23,7 @@ springdoc:
 
 swagger:
   server:
-    url: ${SWAGGER_SERVER_URL:8083}
+    url: ${SWAGGER_SERVER_URL:http://localhost:8083/api/ruota}
 
 server:
   servlet:

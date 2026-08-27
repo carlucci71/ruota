@@ -35,14 +35,14 @@ public class OpenApiConfig {
         // Ottieni il profilo attivo
         String[] activeProfiles = environment.getActiveProfiles();
         String profile = activeProfiles.length > 0 ? activeProfiles[0] : "default";
-        String titleWithProfile = String.format("Survivor API [%s]", profile.toUpperCase());
+        String titleWithProfile = String.format("API [%s]", profile.toUpperCase());
 
         return new OpenAPI()
                 .servers(List.of(swaggerServer))
                 .info(new Info()
                         .title(titleWithProfile)
                         .version("1.0")
-                        .description("API per il progetto Survivor"))
+                        .description("API"))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new io.swagger.v3.oas.models.Components()
                         .addSecuritySchemes(securitySchemeName,

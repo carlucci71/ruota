@@ -9,10 +9,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableCaching
 
-public class SurvivorApplication {
+public class RuotaApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SurvivorApplication.class, args);
+		SpringApplication.run(RuotaApplication.class, args);
 	}
 
 }
