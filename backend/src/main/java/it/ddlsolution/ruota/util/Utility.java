@@ -24,10 +24,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Random;
 import java.util.TimeZone;
 
-import static it.ddlsolution.ruota.util.Constant.CALENDARIO_API2;
-import static it.ddlsolution.ruota.util.Constant.CALENDARIO_MOCK;
 
 @Component
 @Slf4j
@@ -61,22 +60,22 @@ public class Utility {
         }
     }
 
-    public static String getInSeconds(LocalDateTime localDateTime){
+    public  String getInSeconds(LocalDateTime localDateTime){
         return localDateTime.format(DateTimeFormatter.ofPattern(dateFormatLiteWithTimeAndSeconds));
 
     }
 
-    public static LocalDateTime toLocalDateTimeItaly(String dateString){
+    public  LocalDateTime toLocalDateTimeItaly(String dateString){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormatLiteWithTime).withLocale(Locale.ITALY);
         return LocalDateTime.parse(dateString, formatter);
     }
 
-    public static LocalDateTime toLocalDateTimeItalyReadable(String dateString){
+    public  LocalDateTime toLocalDateTimeItalyReadable(String dateString){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormatReadable).withLocale(Locale.ITALY);
         return LocalDateTime.parse(dateString, formatter);
     }
 
-    public static String toLocalDateTimeItalyReadable(LocalDateTime localDateTime){
+    public  String toLocalDateTimeItalyReadable(LocalDateTime localDateTime){
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormatReadable).withLocale(Locale.ITALY);
         return localDateTime.format(formatter);
     }
@@ -155,15 +154,15 @@ public class Utility {
     }
 
 
-    public static BigDecimal bdFromDouble(Double d) {
+    public  BigDecimal bdFromDouble(Double d) {
         return new BigDecimal(String.valueOf(Double.toString(d)));
     }
 
-    public static BigDecimal bdFromFloat(Float d) {
+    public  BigDecimal bdFromFloat(Float d) {
         return new BigDecimal(String.valueOf(Float.toString(d)));
     }
 
-    public static long diffDateFromFormatLite(String primaData, String secondaData) {
+    public  long diffDateFromFormatLite(String primaData, String secondaData) {
 
 
         LocalDate primaDataL = LocalDate.of(Integer.parseInt(primaData.substring(0, 4)), Integer.parseInt(primaData.substring(4, 6)), Integer.parseInt(primaData.substring(6, 8)));
@@ -174,20 +173,20 @@ public class Utility {
         return differenzaGiorni;
     }
 
-    public static BigDecimal roundBigDecimal(BigDecimal value, int newScale) {
+    public  BigDecimal roundBigDecimal(BigDecimal value, int newScale) {
         if (value == null) return BigDecimal.ZERO.stripTrailingZeros();
         return value.setScale(newScale, RoundingMode.HALF_UP);
     }
 
-    public String getImplementationExternalApi() {
-        String[] activeProfiles = environment.getActiveProfiles();
-        String implementationExternalApi = Arrays.stream(activeProfiles)
-                .filter(p -> p.equals(CALENDARIO_MOCK) || p.equals(CALENDARIO_API2))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Implementazione Api External non trovata"));
-        return implementationExternalApi;
-    }
 
 
+        private  final Random RANDOM = new Random();
+
+        public  int randomUntil(int max) {
+            if (max < 1) {
+                throw new IllegalArgumentException("max deve essere >= 1");
+            }
+            return RANDOM.nextInt(max) + 1;
+        }
 
 }
