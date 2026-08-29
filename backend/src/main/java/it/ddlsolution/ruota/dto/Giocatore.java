@@ -7,7 +7,9 @@ import java.util.Objects;
 @Data
 public class Giocatore {
     private String nome;
-    private int punti;
+    private int puntiTotale;
+    private int puntiManche;
+    private boolean withJolly;
 
     public Giocatore(String nome){
         this.nome= nome;

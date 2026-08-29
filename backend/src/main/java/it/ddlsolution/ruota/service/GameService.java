@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 @Service
@@ -18,7 +18,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class GameService {
     public final static char PLACEHOLDER = '-';
-
+    private final Utility utility;
     private Giocatore giocatoreTurno;
     private Tabellone tabelloneTurno;
     private Tabellone tabelloneInProgress;
@@ -28,22 +28,28 @@ public class GameService {
     private boolean triploUse;
     private boolean jollyUse;
     private int valoreCresce;
+    private List<Tabellone> tabelloni;
 
-    public void aggiornaPunti(int punti) {
+    public void incrementaPuntiManche(int punti) {
         String nome = giocatoreTurno.getNome();
         Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
-        daModificare.setPunti(daModificare.getPunti() + punti);
+        daModificare.setPuntiManche(daModificare.getPuntiManche() + punti);
     }
 
 
-    enum Fase {INIZIALE, CHIAMA, GIOCA}
+    public void bancarotta() {
+        String nome = giocatoreTurno.getNome();
+        Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
+        if (daModificare.isWithJolly()){
+            daModificare.setWithJolly(false);
+        } else {
+            daModificare.setPuntiManche(0);
+            daModificare.setPuntiTotale(0);
+            nextGiocatore();
+        }
+    }
 
-    enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
-
-    private final Utility utility;
-    private List<Tabellone> tabelloni;
-
-    public Object gira() {
+    public Object gira(String forzato) {
         if (fase != Fase.INIZIALE && fase != Fase.GIOCA) {
             throw new RuntimeException("Puoi chiamare solo se sei nella fase iniziale, ora sei in fase: " + fase.name());
         }
@@ -52,7 +58,7 @@ public class GameService {
         for (Object spicchio : ruotaBase) {
             if (spicchio.equals(SpicchiCustom.GARAGE)) {
                 if (garageUse) {
-                    spicchio = 500;//TODO verificare
+                    spicchio = 500;
                 } else {
                     garageUse = true;
                 }
@@ -69,7 +75,7 @@ public class GameService {
             }
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
                 if (triploUse) {
-                    spicchio = SpicchiCustom.BANCAROTTA;//TODO verificare
+                    spicchio = SpicchiCustom.BANCAROTTA;
                 } else {
                     int randomTriplo = utility.randomUntil(3);
                     if (randomTriplo == 1 || randomTriplo == 3) {
@@ -77,13 +83,31 @@ public class GameService {
                     } else {
                         spicchio = SpicchiCustom.RADDOPPIA;
                     }
-                    //triploUse=true;//TODO VERIFICA FORSE NON SI TOGLIE
+                    triploUse=true;
                 }
             }
             ruota.add(spicchio);
         }
         fase = Fase.CHIAMA;
-        return ruota.get(utility.randomUntil(ruota.size()) - 1);
+        Object ottenuto = getSpicchio(ruota, forzato);
+        if (ottenuto.equals(SpicchiCustom.PASSA)) {
+            nextGiocatore();
+        }
+        if (ottenuto.equals(SpicchiCustom.BANCAROTTA)) {
+            bancarotta();
+        }
+        return ottenuto;
+    }
+
+    private Object getSpicchio(List ruota,String forzato){
+        if (forzato==null){
+            return ruota.get(utility.randomUntil(ruota.size()) - 1);
+        } else {
+            for (Object o : ruota) {
+                if (o.toString().equals(forzato)) return o;
+            }
+        }
+        throw new RuntimeException("Impossibile forzare: " + forzato);
     }
 
     public int consonante(Character lettera) {
@@ -104,12 +128,12 @@ public class GameService {
             }
         }
         this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
-        fase=Fase.GIOCA;
+        fase = Fase.GIOCA;
         return ret;
     }
 
     Character convertiCarattere(char c) {
-        Character confronta=null;
+        Character confronta = null;
 
         switch (c) {
             case 'À' -> {
@@ -134,6 +158,7 @@ public class GameService {
 
         return confronta;
     }
+
     public void setGiocatoreTurno(String nome) {
         giocatoreTurno = giocatori
                 .stream()
@@ -156,10 +181,6 @@ public class GameService {
             }
         }
         this.tabelloneInProgress = new Tabellone(tabellone.getTitolo() + "," + nuovaFrase.toString());
-    }
-
-    public void setTabelloni(List<Tabellone> tabelloni) {
-        this.tabelloni = tabelloni;
     }
 
     public void addGiocatori(String giocatoreNome) {
@@ -188,8 +209,16 @@ public class GameService {
         valoreCresce = 1000;
         fase = Fase.INIZIALE;
         for (Giocatore giocatore : giocatori) {
-            giocatore.setPunti(0);
+            giocatore.setPuntiTotale(0);
         }
+    }
+
+    private void nextGiocatore(){
+        List<Giocatore> list = new ArrayList<>(giocatori);
+        int idx = list.indexOf(giocatoreTurno);
+        if (idx == -1) throw new NoSuchElementException();
+        giocatoreTurno = list.get((idx + 1) % list.size());
+        fase = Fase.GIOCA;
     }
 
     public List<Object> ruotaBase() {
@@ -222,7 +251,6 @@ JOLLY
                 SpicchiCustom.BANCAROTTA, 500, SpicchiCustom.JOLLY, 700, 200, 400
         );
     }
-
 
     public void update(String nuovoNome, String nome) {
         if (!nuovoNome.equalsIgnoreCase(nome)) {
@@ -259,4 +287,12 @@ JOLLY
     public List<Tabellone> getTabelloni() {
         return tabelloni;
     }
+
+    public void setTabelloni(List<Tabellone> tabelloni) {
+        this.tabelloni = tabelloni;
+    }
+
+    enum Fase {INIZIALE, CHIAMA, GIOCA}
+
+    enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 }
