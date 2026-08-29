@@ -17,7 +17,7 @@ import java.util.Set;
 @Getter
 @RequiredArgsConstructor
 public class GameService {
-    public final static char PLACEHOLDER = '_';
+    public final static char PLACEHOLDER = '-';
 
     private Giocatore giocatoreTurno;
     private Tabellone tabelloneTurno;

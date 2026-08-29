@@ -38,15 +38,6 @@ public class GameController {
         result.put("Tabelloni", tabelloni.size());
         result.put("Tabellone titolo",gameService.getTabelloneTurno() == null? "--": gameService.getTabelloneTurno().getTitolo());
         result.put("TabelloneInProgress",gameService.getTabelloneInProgress() == null? "--": gameService.getTabelloneInProgress().getFraseOK());
-
-        result.put("TabelloneInProgress2",gameService.getTabelloneInProgress() == null? "--": gameService.getTabelloneInProgress().getFrase());
-        result.put("TabelloneInProgress3",gameService.getTabelloneInProgress() == null? "--": gameService.getTabelloneTurno().getFrase());
-
-
-        try {
-            System.out.println(gameService.getTabelloneTurno().getFrase());
-        } catch (Exception e){}
-
         result.put("GiocatoreTurno",gameService.getGiocatoreTurno() == null? "--": gameService.getGiocatoreTurno().getNome());
         result.put("Giocatori", gameService.getGiocatori());
         result.put("Fase", gameService.getFase());
