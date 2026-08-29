@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,18 +32,19 @@ public class GameController {
         Map<String, Object> result = new LinkedHashMap<>();
         List<Tabellone> tabelloni = gameService.getTabelloni();
         result.put("Tabelloni", tabelloni.size());
-        result.put("Tabellone titolo",gameService.getTabelloneTurno() == null? "--": gameService.getTabelloneTurno().getTitolo());
-        result.put("TabelloneInProgress",gameService.getTabelloneInProgress() == null? "--": gameService.getTabelloneInProgress().getFraseOK());
-        result.put("GiocatoreTurno",gameService.getGiocatoreTurno() == null? "--": gameService.getGiocatoreTurno().getNome());
+        result.put("Tabellone titolo", gameService.getTabelloneTurno() == null ? "--" : gameService.getTabelloneTurno().getTitolo());
+        result.put("TabelloneInProgress", gameService.getTabelloneInProgress() == null ? "--" : gameService.getTabelloneInProgress().getFraseOK());
+        result.put("GiocatoreTurno", gameService.getGiocatoreTurno() == null ? "--" : gameService.getGiocatoreTurno().getNome());
         result.put("Giocatori", gameService.getGiocatori());
         result.put("Fase", gameService.getFase());
         return ResponseEntity.ok(result);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> reset() {
+    public ResponseEntity<Void> init() {
         gameService.resetGiocatori();
         gameService.resetTurno();
+        gameService.reset();
         return ResponseEntity.noContent().build();
     }
 
@@ -54,25 +56,31 @@ public class GameController {
 
     @GetMapping("/gira")
     public ResponseEntity<Map<String, Object>> gira(@RequestParam(required = false) String forzato) {
-        Map<String, Object> result=Map.of("RESULT",gameService.gira(forzato));
+        Map<String, Object> result = Map.of("RESULT", gameService.gira(forzato));
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/consonante")
-    public ResponseEntity<Map<String, Object>> consonante(@RequestParam Character consonante,@RequestParam Object trovato) {
+    public ResponseEntity<Map<String, Object>> consonante(@RequestParam Character consonante, @RequestParam Object trovato) {
         if (Character.isLowerCase(consonante)) {
             consonante = Character.toUpperCase(consonante);
         }
         int trovate = gameService.consonante(consonante);
         int numero;
-        try {
-            numero=Integer.parseInt(trovato.toString());
-        } catch (Exception e) {
-            numero=100;//TODO
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("TROVATE", trovate);
+        if (trovato.equals(GameService.SpicchiCustom.JOLLY.name())) {
+            if (trovate > 0) {
+                gameService.setJollyGiocatore();
+            } else {
+                gameService.nextGiocatore();
+            }
+        } else {
+            numero = Integer.parseInt(trovato.toString());
+            int punti = numero * trovate;
+            gameService.incrementaPuntiManche(punti);
+            ret.put("PUNTI", punti);
         }
-        int punti = numero * trovate;
-        Map<String, Object> result=Map.of("TROVATE",trovate,"PUNTI", punti);
-        gameService.incrementaPuntiManche(punti);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(ret);
     }
 }
