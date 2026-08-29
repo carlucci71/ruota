@@ -7,24 +7,133 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
 @Getter
 @RequiredArgsConstructor
 public class GameService {
+    public final static char PLACEHOLDER = '_';
+
     private Giocatore giocatoreTurno;
     private Tabellone tabelloneTurno;
     private Tabellone tabelloneInProgress;
     private Set<Giocatore> giocatori;
     private Fase fase;
+    private boolean garageUse;
+    private boolean triploUse;
+    private boolean jollyUse;
+    private int valoreCresce;
 
-    enum Fase{INIZIALE}
+    public void aggiornaPunti(int punti) {
+        String nome = giocatoreTurno.getNome();
+        Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
+        daModificare.setPunti(daModificare.getPunti() + punti);
+    }
+
+
+    enum Fase {INIZIALE, CHIAMA, GIOCA}
+
+    enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 
     private final Utility utility;
     private List<Tabellone> tabelloni;
+
+    public Object gira() {
+        if (fase != Fase.INIZIALE && fase != Fase.GIOCA) {
+            throw new RuntimeException("Puoi chiamare solo se sei nella fase iniziale, ora sei in fase: " + fase.name());
+        }
+        List<Object> ruotaBase = ruotaBase();
+        List<Object> ruota = new ArrayList<>();
+        for (Object spicchio : ruotaBase) {
+            if (spicchio.equals(SpicchiCustom.GARAGE)) {
+                if (garageUse) {
+                    spicchio = 500;//TODO verificare
+                } else {
+                    garageUse = true;
+                }
+            }
+            if (spicchio.equals(SpicchiCustom.JOLLY)) {
+                if (jollyUse) {
+                    spicchio = 100;
+                } else {
+                    jollyUse = true;
+                }
+            }
+            if (spicchio.equals(SpicchiCustom.CRESCE)) {
+                spicchio = valoreCresce;
+            }
+            if (spicchio.equals(SpicchiCustom.TRIPLO)) {
+                if (triploUse) {
+                    spicchio = SpicchiCustom.BANCAROTTA;//TODO verificare
+                } else {
+                    int randomTriplo = utility.randomUntil(3);
+                    if (randomTriplo == 1 || randomTriplo == 3) {
+                        spicchio = SpicchiCustom.BANCAROTTA;
+                    } else {
+                        spicchio = SpicchiCustom.RADDOPPIA;
+                    }
+                    //triploUse=true;//TODO VERIFICA FORSE NON SI TOGLIE
+                }
+            }
+            ruota.add(spicchio);
+        }
+        fase = Fase.CHIAMA;
+        return ruota.get(utility.randomUntil(ruota.size()) - 1);
+    }
+
+    public int consonante(Character lettera) {
+        StringBuffer nuovaFrase = new StringBuffer();
+        int ret = 0;
+        char[] frase = getTabelloneTurno().getFrase().toCharArray();
+        char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
+        for (int i = 0; i < frase.length; i++) {
+            char attInProgress = inProgress[i];
+            char attChar = frase[i];
+            //cc = [ ', À, È, Ì, Ò, Ù]
+
+            if (attInProgress == PLACEHOLDER && convertiCarattere(attChar) == lettera) {
+                ret++;
+                nuovaFrase.append(attChar);
+            } else {
+                nuovaFrase.append(attInProgress);
+            }
+        }
+        this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
+        fase=Fase.GIOCA;
+        return ret;
+    }
+
+    Character convertiCarattere(char c) {
+        Character confronta=null;
+
+        switch (c) {
+            case 'À' -> {
+                confronta = 'A';
+            }
+            case 'È' -> {
+                confronta = 'E';
+            }
+            case 'Ì' -> {
+                confronta = 'I';
+            }
+            case 'Ò' -> {
+                confronta = 'O';
+            }
+            case 'Ù' -> {
+                confronta = 'U';
+            }
+            default -> {
+                confronta = c;
+            }
+        }
+
+        return confronta;
+    }
     public void setGiocatoreTurno(String nome) {
         giocatoreTurno = giocatori
                 .stream()
@@ -40,15 +149,17 @@ public class GameService {
         for (char c : charArray) {
             if (c == ' ') {
                 nuovaFrase.append(" ");
+            } else if (c == '\'') {
+                nuovaFrase.append("'");
             } else {
-                nuovaFrase.append(".");
+                nuovaFrase.append(PLACEHOLDER);
             }
         }
         this.tabelloneInProgress = new Tabellone(tabellone.getTitolo() + "," + nuovaFrase.toString());
     }
 
     public void setTabelloni(List<Tabellone> tabelloni) {
-        this.tabelloni=tabelloni;
+        this.tabelloni = tabelloni;
     }
 
     public void addGiocatori(String giocatoreNome) {
@@ -70,9 +181,48 @@ public class GameService {
         tabelloneInProgress = null;
     }
 
-    public void resetFase() {
-        fase=Fase.INIZIALE;
+    public void reset() {
+        garageUse = false;
+        triploUse = false;
+        jollyUse = false;
+        valoreCresce = 1000;
+        fase = Fase.INIZIALE;
+        for (Giocatore giocatore : giocatori) {
+            giocatore.setPunti(0);
+        }
     }
+
+    public List<Object> ruotaBase() {
+        /*
+        garage --> ?
+        triplo --> bancarotta
+        1000 (cresce)
+        jolly (100)
+
+PASSA x2
+GARAGE
+TRIPLO
+CRESCE
+BANCAROTTA
+JOLLY
+100
+200 x3
+300 x2
+400 x2
+500 x3
+600 x2
+700 x2
+800 x2
+
+         */
+        return List.of(
+                SpicchiCustom.PASSA, 500, SpicchiCustom.GARAGE, 600, 200, 800,
+                SpicchiCustom.TRIPLO, 300, 500, 100, 400, 800,
+                SpicchiCustom.PASSA, 600, 300, 700, 200, SpicchiCustom.CRESCE,
+                SpicchiCustom.BANCAROTTA, 500, SpicchiCustom.JOLLY, 700, 200, 400
+        );
+    }
+
 
     public void update(String nuovoNome, String nome) {
         if (!nuovoNome.equalsIgnoreCase(nome)) {
@@ -101,12 +251,12 @@ public class GameService {
         }
         setGiocatoreTurno(giocatore.getNome());
         int fraseRandom = utility.randomUntil(tabelloni.size());
-        fraseRandom = 1;//TODO frase fissa
+        fraseRandom = 0;//TODO frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
     }
 
-    public List<Tabellone> getTabelloni(){
-        return  tabelloni;
+    public List<Tabellone> getTabelloni() {
+        return tabelloni;
     }
 }
