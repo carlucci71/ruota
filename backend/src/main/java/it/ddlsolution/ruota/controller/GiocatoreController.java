@@ -1,6 +1,5 @@
 package it.ddlsolution.ruota.controller;
 
-import it.ddlsolution.ruota.dto.Giocatore;
 import it.ddlsolution.ruota.dto.request.AddGiocatoreDTO;
 
 import it.ddlsolution.ruota.service.GameService;
@@ -15,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/giocatore")
@@ -25,27 +26,27 @@ public class GiocatoreController {
     private final GameService gameService;
 
     @PostMapping
-    public ResponseEntity<Void> add(@RequestBody AddGiocatoreDTO addGiocatore) {
+    public ResponseEntity<Map<String, Object>> add(@RequestBody AddGiocatoreDTO addGiocatore) {
         gameService.addGiocatori(addGiocatore.getNome());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
     @PutMapping("/{nome}")
-    public ResponseEntity<Void> update(@RequestBody AddGiocatoreDTO addGiocatore, @PathVariable String nome) {
+    public ResponseEntity<Map<String, Object>> update(@RequestBody AddGiocatoreDTO addGiocatore, @PathVariable String nome) {
         gameService.update(addGiocatore.getNome(),nome);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
     @DeleteMapping("/{nome}")
-    public ResponseEntity<Void> delete(@PathVariable String nome) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable String nome) {
         gameService.deleteGiocatore(nome);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> reset() {
+    public ResponseEntity<Map<String, Object>> reset() {
         gameService.resetGiocatori();
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
 }

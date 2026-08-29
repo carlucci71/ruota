@@ -3,10 +3,14 @@ package it.ddlsolution.ruota.dto;
 import it.ddlsolution.ruota.service.GameService;
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 public class Tabellone {
     private String titolo;
     private String frase;
+    private boolean consonantiFinite;
+    private boolean vocaliFinite;
 
     public Tabellone(String riga){
         String[] split = riga.split(",");
@@ -26,4 +30,6 @@ public class Tabellone {
         }
         return sb.toString();
     }
+
+
 }

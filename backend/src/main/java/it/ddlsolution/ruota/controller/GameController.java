@@ -28,35 +28,29 @@ public class GameController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> info() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        List<Tabellone> tabelloni = gameService.getTabelloni();
-        result.put("Tabelloni", tabelloni.size());
-        result.put("Tabellone titolo", gameService.getTabelloneTurno() == null ? "--" : gameService.getTabelloneTurno().getTitolo());
-        result.put("TabelloneInProgress", gameService.getTabelloneInProgress() == null ? "--" : gameService.getTabelloneInProgress().getFraseOK());
-        result.put("GiocatoreTurno", gameService.getGiocatoreTurno() == null ? "--" : gameService.getGiocatoreTurno().getNome());
-        result.put("Giocatori", gameService.getGiocatori());
-        result.put("Fase", gameService.getFase());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
+
     @DeleteMapping
-    public ResponseEntity<Void> init() {
+    public ResponseEntity<Map<String, Object>> init() {
         gameService.resetGiocatori();
-        gameService.resetTurno();
         gameService.reset();
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
     @PostMapping
-    public ResponseEntity<Void> avvia(@RequestBody AvviaDTO avviaDTO) {
+    public ResponseEntity<Map<String, Object>> avvia(@RequestBody AvviaDTO avviaDTO) {
         gameService.avvia(avviaDTO.getNome());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(gameService.buildInfo());
     }
 
     @GetMapping("/gira")
     public ResponseEntity<Map<String, Object>> gira(@RequestParam(required = false) String forzato) {
-        Map<String, Object> result = Map.of("RESULT", gameService.gira(forzato));
-        return ResponseEntity.ok(result);
+        Object gira = gameService.gira(forzato);
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.put("SPICCHIO", gira);
+        return ResponseEntity.ok(ret);
     }
 
     @GetMapping("/consonante")
@@ -64,7 +58,10 @@ public class GameController {
         if (Character.isLowerCase(consonante)) {
             consonante = Character.toUpperCase(consonante);
         }
-        return ResponseEntity.ok(gameService.chiamaConsonante(consonante, trovato));
+        Map<String, Object> chiamaConsonante = gameService.chiamaConsonante(consonante, trovato);
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.putAll(chiamaConsonante);
+        return ResponseEntity.ok(ret);
     }
 
     @GetMapping("/vocale")
@@ -72,12 +69,18 @@ public class GameController {
         if (Character.isLowerCase(vocale)) {
             vocale = Character.toUpperCase(vocale);
         }
-        return ResponseEntity.ok(gameService.compraVocale(vocale));
+        Map<String, Object> compraVocale = gameService.compraVocale(vocale);
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.putAll(compraVocale);
+        return ResponseEntity.ok(ret);
     }
 
     @GetMapping("/soluzione")
     public ResponseEntity<Map<String, Object>> soluzione(@RequestParam String soluzione) {
-        return ResponseEntity.ok(gameService.soluzione(soluzione));
+        Map<String, Object> callSoluzione = gameService.soluzione(soluzione);
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.putAll(callSoluzione);
+        return ResponseEntity.ok(ret);
     }
 
 }

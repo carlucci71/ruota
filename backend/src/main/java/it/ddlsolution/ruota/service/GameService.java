@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -133,17 +135,34 @@ public class GameService {
         int ret = 0;
         char[] frase = getTabelloneTurno().getFrase().toCharArray();
         char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
+        Set<Character> consonantiMancanti=new HashSet<>();
+        Set<Character> vocaliMancanti=new HashSet<>();
         for (int i = 0; i < frase.length; i++) {
             char attInProgress = inProgress[i];
             char attChar = frase[i];
-            if (attInProgress == PLACEHOLDER && convertiCarattere(attChar) == lettera) {
+            Character attCharConverted = convertiCarattere(attChar);
+            if (attInProgress == PLACEHOLDER && attCharConverted == lettera) {
                 ret++;
                 nuovaFrase.append(attChar);
             } else {
                 nuovaFrase.append(attInProgress);
+                if (attInProgress == PLACEHOLDER) {
+                    try {
+                        VocaliAmmesse.valueOf(String.valueOf(attCharConverted));
+                        vocaliMancanti.add(attCharConverted);
+                    } catch (Exception e) {
+                    }
+                    try {
+                        ConsonantiAmmesse.valueOf(String.valueOf(attCharConverted));
+                        consonantiMancanti.add(attCharConverted);
+                    } catch (Exception e) {
+                    }
+                }
             }
         }
         this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
+        getTabelloneInProgress().setConsonantiFinite(consonantiMancanti.size()==0);
+        getTabelloneInProgress().setVocaliFinite(vocaliMancanti.size()==0);
         return ret;
     }
 
@@ -209,13 +228,10 @@ public class GameService {
         addGiocatori("GIMMI");
     }
 
-    public void resetTurno() {
+    public void reset() {
         giocatoreTurno = null;
         tabelloneTurno = null;
         tabelloneInProgress = null;
-    }
-
-    public void reset() {
         garageUse = false;
         raddoppiaUse = false;
         jollyUse = false;
@@ -320,6 +336,20 @@ JOLLY
         this.tabelloni = tabelloni;
     }
 
+    public Map<String, Object> buildInfo() {
+        Map<String, Object> ret = new LinkedHashMap<>();
+        List<Tabellone> tabelloni = getTabelloni();
+        ret.put("Tabelloni", tabelloni.size());
+        ret.put("Tabellone titolo", getTabelloneTurno() == null ? "--" : getTabelloneTurno().getTitolo());
+        ret.put("TabelloneInProgress", getTabelloneInProgress() == null ? "--" : getTabelloneInProgress().getFraseOK());
+        ret.put("VocaliFinite", getTabelloneInProgress() == null ? "--" : getTabelloneInProgress().isVocaliFinite());
+        ret.put("ConsonantiFinite", getTabelloneInProgress() == null ? "--" : getTabelloneInProgress().isConsonantiFinite());
+        ret.put("GiocatoreTurno", getGiocatoreTurno() == null ? "--" : getGiocatoreTurno().getNome());
+        ret.put("Giocatori", getGiocatori());
+        ret.put("Fase", getFase());
+        return ret;
+    }
+
     public Map<String, Object> chiamaConsonante(Character consonante, Object trovato) {
         if (fase != Fase.PARLA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase PARLA, ora sei in fase: " + fase.name());
@@ -331,7 +361,7 @@ JOLLY
         }
         int trovate = adaptLettera(consonante);
         int numero;
-        Map<String, Object> ret = new HashMap<>();
+        Map<String, Object> ret = new LinkedHashMap<>();
         ret.put("TROVATE", trovate);
         if (trovato.equals(GameService.SpicchiCustom.JOLLY.name())) {
             if (trovate > 0) {
@@ -392,17 +422,25 @@ JOLLY
         Map ret = new HashMap();
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())){
             ret.put("ESITO","OK");
+            Giocatore giocatoreCorrente = getGiocatoreCorrente();
+            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
+            giocatoreCorrente.setPuntiManche(0);
+            valoreCresce=valoreCresce+1000;
+            nextGiocatore();
+            avvia(getGiocatoreCorrente().getNome());
         } else {
             ret.put("ESITO","KO");
+            nextGiocatore();
         }
+        fase=Fase.GIRA;
         return ret;
     }
 
     enum Fase {GIRA, PARLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
-    
-    enum VocaliAmmesse{A,E,I,O,U}
-    
-    enum ConsonantiAmmesse{B,C,D,F,G,H,L,M,N,P,Q,R,S,T,V,Z,J,K,W,X,Y}
+
+    public enum VocaliAmmesse{A,E,I,O,U}
+
+    public enum ConsonantiAmmesse{B,C,D,F,G,H,L,M,N,P,Q,R,S,T,V,Z,J,K,W,X,Y}
 }
