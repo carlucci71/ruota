@@ -10,6 +10,7 @@ public class Giocatore {
     private int puntiTotale;
     private int puntiManche;
     private boolean withJolly;
+    private boolean withGarage;
 
     public Giocatore(String nome){
         this.nome= nome;

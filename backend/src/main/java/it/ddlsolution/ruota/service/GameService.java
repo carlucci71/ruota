@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -31,20 +33,24 @@ public class GameService {
     private int valoreCresce;
 
     public void incrementaPuntiManche(int punti) {
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() + punti);
+    }
+
+    private Giocatore getGiocatoreCorrente() {
         String nome = giocatoreTurno.getNome();
-        Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
-        daModificare.setPuntiManche(daModificare.getPuntiManche() + punti);
+        Giocatore giocatoreCorrente = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
+        return giocatoreCorrente;
     }
 
 
     public void bancarotta() {
-        String nome = giocatoreTurno.getNome();
-        Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
-        if (daModificare.isWithJolly()){
-            daModificare.setWithJolly(false);
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        if (giocatoreCorrente.isWithJolly()){
+            giocatoreCorrente.setWithJolly(false);
         } else {
-            daModificare.setPuntiManche(0);
-            daModificare.setPuntiTotale(0);
+            giocatoreCorrente.setPuntiManche(0);
+            giocatoreCorrente.setPuntiTotale(0);
             nextGiocatore();
         }
         fase=Fase.GIRA;
@@ -73,13 +79,6 @@ public class GameService {
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
                 if (raddoppiaUse) {
                     spicchio = SpicchiCustom.BANCAROTTA;
-                } else {
-                    int randomTriplo = utility.randomUntil(3);
-                    if (randomTriplo == 1 || randomTriplo == 3) {
-                        spicchio = SpicchiCustom.BANCAROTTA;
-                    } else {
-                        spicchio = SpicchiCustom.RADDOPPIA;
-                    }
                 }
             }
             ruota.add(spicchio);
@@ -101,6 +100,18 @@ public class GameService {
         if (ottenuto.equals(SpicchiCustom.RADDOPPIA)) {
             raddoppiaUse = true;
         }
+        if (ottenuto.equals(SpicchiCustom.TRIPLO)) {
+            int randomTriplo = utility.randomUntil(3);
+            if (ottenuto.toString().equals(forzato)){
+                ottenuto = SpicchiCustom.RADDOPPIA;
+            } else {
+                if (randomTriplo == 1 || randomTriplo == 3) {
+                    ottenuto = SpicchiCustom.BANCAROTTA;
+                } else {
+                    ottenuto = SpicchiCustom.RADDOPPIA;
+                }
+            }
+        }
         return ottenuto;
     }
 
@@ -110,12 +121,14 @@ public class GameService {
         } else {
             for (Object o : ruota) {
                 if (o.toString().equals(forzato)) return o;
+                //if (o.toString().equals(forzato.equals(SpicchiCustom.TRIPLO.name()) ? SpicchiCustom.RADDOPPIA.name():forzato)) return o;
+
             }
         }
         throw new RuntimeException("Impossibile forzare: " + forzato);
     }
 
-    public int consonante(Character lettera) {
+    public int adaptLettera(Character lettera) {
         StringBuffer nuovaFrase = new StringBuffer();
         int ret = 0;
         char[] frase = getTabelloneTurno().getFrase().toCharArray();
@@ -131,7 +144,6 @@ public class GameService {
             }
         }
         this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
-        fase = Fase.GIRA;
         return ret;
     }
 
@@ -222,10 +234,19 @@ public class GameService {
         fase = Fase.GIRA;
     }
 
-    public void setJollyGiocatore(){
-        String nome = giocatoreTurno.getNome();
-        Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
-        daModificare.setWithJolly(true);
+    public void addJollyGiocatore(){
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        giocatoreCorrente.setWithJolly(true);
+    }
+
+    public void raddoppiaGiocatore(){
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche()*2);
+    }
+
+    public void garageGiocatore(){
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        giocatoreCorrente.setWithGarage(true);
     }
 
     public List<Object> ruotaBase() {
@@ -265,8 +286,8 @@ JOLLY
             if (countNuovoNome > 0) {
                 throw new RuntimeException("Nuovo nome già presente: " + nuovoNome);
             }
-            Giocatore daModificare = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
-            daModificare.setNome(nuovoNome);
+            Giocatore giocatoreCorrente = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
+            giocatoreCorrente.setNome(nuovoNome);
         }
     }
 
@@ -299,7 +320,89 @@ JOLLY
         this.tabelloni = tabelloni;
     }
 
+    public Map<String, Object> chiamaConsonante(Character consonante, Object trovato) {
+        if (fase != Fase.PARLA) {
+            throw new RuntimeException("Puoi girare solo se sei nella fase PARLA, ora sei in fase: " + fase.name());
+        }
+        try {
+            ConsonantiAmmesse.valueOf(String.valueOf(consonante));
+        } catch (Exception e) {
+            throw new RuntimeException("La consonante non è ammessa: " + consonante);
+        }
+        int trovate = adaptLettera(consonante);
+        int numero;
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("TROVATE", trovate);
+        if (trovato.equals(GameService.SpicchiCustom.JOLLY.name())) {
+            if (trovate > 0) {
+                addJollyGiocatore();
+            } else {
+                nextGiocatore();
+            }
+        } else if (trovato.equals(GameService.SpicchiCustom.RADDOPPIA.name())) {
+            if (trovate > 0) {
+                raddoppiaGiocatore();
+            } else {
+                nextGiocatore();
+            }
+        } else if (trovato.equals(GameService.SpicchiCustom.GARAGE.name())) {
+            if (trovate > 0) {
+                garageGiocatore();
+            } else {
+                nextGiocatore();
+            }
+        } else {
+            numero = Integer.parseInt(trovato.toString());
+            int punti = numero * trovate;
+            incrementaPuntiManche(punti);
+            ret.put("PUNTI", punti);
+        }
+        if (trovate==0){
+            nextGiocatore();
+        }
+        fase = Fase.GIRA;
+        return ret;
+    }
+
+    public Map<String, Object> compraVocale(Character vocale) {
+        if (fase != Fase.GIRA) {
+            throw new RuntimeException("Puoi girare solo se sei nella fase GIRA, ora sei in fase: " + fase.name());
+        }
+        try {
+            VocaliAmmesse.valueOf(String.valueOf(vocale));
+        } catch (Exception e) {
+            throw new RuntimeException("La vocale non è ammessa: " + vocale);
+        }
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        if (giocatoreCorrente.getPuntiManche()<500){
+            throw new RuntimeException("Non hai soldi a sufficienza: " + giocatoreCorrente.getPuntiManche());
+        }
+        incrementaPuntiManche(-500);
+        int trovate = adaptLettera(vocale);
+        if (trovate==0){
+            nextGiocatore();
+        }
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("TROVATE", trovate);
+        fase = Fase.GIRA;
+        return ret;
+    }
+
+    public Map<String, Object> soluzione(String soluzione) {
+        Map ret = new HashMap();
+        if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())){
+            ret.put("ESITO","OK");
+        } else {
+            ret.put("ESITO","KO");
+        }
+        return ret;
+    }
+
     enum Fase {GIRA, PARLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
+    
+    enum VocaliAmmesse{A,E,I,O,U}
+    
+    enum ConsonantiAmmesse{B,C,D,F,G,H,L,M,N,P,Q,R,S,T,V,Z,J,K,W,X,Y}
 }

@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,22 +64,20 @@ public class GameController {
         if (Character.isLowerCase(consonante)) {
             consonante = Character.toUpperCase(consonante);
         }
-        int trovate = gameService.consonante(consonante);
-        int numero;
-        Map<String, Object> ret = new HashMap<>();
-        ret.put("TROVATE", trovate);
-        if (trovato.equals(GameService.SpicchiCustom.JOLLY.name())) {
-            if (trovate > 0) {
-                gameService.setJollyGiocatore();
-            } else {
-                gameService.nextGiocatore();
-            }
-        } else {
-            numero = Integer.parseInt(trovato.toString());
-            int punti = numero * trovate;
-            gameService.incrementaPuntiManche(punti);
-            ret.put("PUNTI", punti);
-        }
-        return ResponseEntity.ok(ret);
+        return ResponseEntity.ok(gameService.chiamaConsonante(consonante, trovato));
     }
+
+    @GetMapping("/vocale")
+    public ResponseEntity<Map<String, Object>> vocale(@RequestParam Character vocale) {
+        if (Character.isLowerCase(vocale)) {
+            vocale = Character.toUpperCase(vocale);
+        }
+        return ResponseEntity.ok(gameService.compraVocale(vocale));
+    }
+
+    @GetMapping("/soluzione")
+    public ResponseEntity<Map<String, Object>> soluzione(@RequestParam String soluzione) {
+        return ResponseEntity.ok(gameService.soluzione(soluzione));
+    }
+
 }
