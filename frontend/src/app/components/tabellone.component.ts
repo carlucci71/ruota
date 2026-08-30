@@ -100,7 +100,7 @@ import { Tabellone, Giocatore } from '../models/game.model';
       justify-content: center;
       align-items: center;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: clamp(18px, 2.5vw, 32px);
       width: 100%;
       max-width: 100%;
     }

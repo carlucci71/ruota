@@ -88,6 +88,18 @@ public class GameService {
         }
         fase = Fase.PARLA;
         Object ottenuto = getSpicchio(ruota, forzato);
+        if (ottenuto.equals(SpicchiCustom.TRIPLO)) {
+            int randomTriplo = utility.randomUntil(3);
+            if (ottenuto.toString().equals(forzato)){
+                ottenuto = SpicchiCustom.RADDOPPIA;
+            } else {
+                if (randomTriplo == 1 || randomTriplo == 3) {
+                    ottenuto = SpicchiCustom.BANCAROTTA;
+                } else {
+                    ottenuto = SpicchiCustom.RADDOPPIA;
+                }
+            }
+        }
         if (ottenuto.equals(SpicchiCustom.PASSA)) {
             nextGiocatore();
         }
@@ -102,18 +114,6 @@ public class GameService {
         }
         if (ottenuto.equals(SpicchiCustom.RADDOPPIA)) {
             raddoppiaUse = true;
-        }
-        if (ottenuto.equals(SpicchiCustom.TRIPLO)) {
-            int randomTriplo = utility.randomUntil(3);
-            if (ottenuto.toString().equals(forzato)){
-                ottenuto = SpicchiCustom.RADDOPPIA;
-            } else {
-                if (randomTriplo == 1 || randomTriplo == 3) {
-                    ottenuto = SpicchiCustom.BANCAROTTA;
-                } else {
-                    ottenuto = SpicchiCustom.RADDOPPIA;
-                }
-            }
         }
         return ottenuto;
     }
