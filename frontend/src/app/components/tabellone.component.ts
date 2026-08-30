@@ -16,7 +16,8 @@ import { Tabellone, Giocatore } from '../models/game.model';
         <div class="frase">
           <div class="frase-row" *ngFor="let row of getFraseRows()">
             <div class="word" *ngFor="let word of row">
-              <div class="letter" *ngFor="let char of word.split('')">
+              <div class="letter" *ngFor="let char of word.text.split(''); let i = index"
+                   [class.highlighted]="isPosizione(word.startIndex + i)">
                 <span [class.revealed]="char !== '-'">
                   {{ char === '-' ? '' : char }}
                 </span>
@@ -53,6 +54,12 @@ import { Tabellone, Giocatore } from '../models/game.model';
             <strong>Tipo Manche:</strong> 
             <span class="tipoManche-badge">
               {{ tipoManche }}
+            </span>
+          </div>
+          <div class="phase-info" *ngIf="posizione !== undefined && posizione !== null">
+            <strong>Posizione:</strong> 
+            <span class="tipoManche-badge">
+              {{ posizione }}
             </span>
           </div>
           <div class="specials-info" *ngIf="giocatoreTurno.withJolly || giocatoreTurno.withGarage">
@@ -141,6 +148,17 @@ import { Tabellone, Giocatore } from '../models/game.model';
     @keyframes reveal {
       0% { transform: scale(0.5); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
+    }
+
+    .letter.highlighted {
+      border-color: #ffd700;
+      box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.9);
+      animation: pulse-posizione 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-posizione {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.9); }
+      50% { transform: scale(1.12); box-shadow: 0 0 16px 5px rgba(255, 215, 0, 1); }
     }
 
     .status {
@@ -250,23 +268,24 @@ export class TabelloneComponent {
   @Input() giocatoreTurno?: Giocatore;
   @Input() fase?: string;
   @Input() tipoManche?: string;
+  @Input() posizione?: number;
 
   isTabelloneValid(): boolean {
     return typeof this.tabellone === 'object' && !!this.tabellone.frase;
   }
 
-  getFraseRows(): string[][] {
+  getFraseRows(): { text: string; startIndex: number }[][] {
     if (!this.tabellone || typeof this.tabellone !== 'object' || !this.tabellone.frase) {
       return [];
     }
 
-    const words = this.tabellone.frase.split(/\s+/).filter(word => word.length > 0);
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
+    const words = this.getWordsWithIndex();
+    const rows: { text: string; startIndex: number }[][] = [];
+    let currentRow: { text: string; startIndex: number }[] = [];
     let currentCount = 0;
 
     for (const word of words) {
-      const wordLength = word.length;
+      const wordLength = word.text.length;
 
       if (currentRow.length > 0 && currentCount + wordLength > 18) {
         rows.push(currentRow);
@@ -283,5 +302,25 @@ export class TabelloneComponent {
     }
 
     return rows;
+  }
+
+  isPosizione(index: number): boolean {
+    return this.posizione !== undefined && this.posizione !== null && this.posizione === index;
+  }
+
+  private getWordsWithIndex(): { text: string; startIndex: number }[] {
+    if (!this.tabellone?.frase) {
+      return [];
+    }
+
+    const words: { text: string; startIndex: number }[] = [];
+    const regex = /\S+/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(this.tabellone.frase)) !== null) {
+      words.push({ text: match[0], startIndex: match.index });
+    }
+
+    return words;
   }
 }

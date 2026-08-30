@@ -26,6 +26,7 @@ public class GameService {
     private Giocatore giocatoreTurno;
     private Tabellone tabelloneTurno;
     private Tabellone tabelloneInProgress;
+    private Map<Character, List<Integer>> posLettere;
     private Set<Giocatore> giocatori;
     private List<Tabellone> tabelloni;
     private Fase fase;
@@ -49,14 +50,14 @@ public class GameService {
 
     public void bancarotta() {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
-        if (giocatoreCorrente.isWithJolly()){
+        if (giocatoreCorrente.isWithJolly()) {
             giocatoreCorrente.setWithJolly(false);
         } else {
             giocatoreCorrente.setPuntiManche(0);
             giocatoreCorrente.setPuntiTotale(0);
             nextGiocatore();
         }
-        fase=Fase.GIRA;
+        fase = Fase.GIRA;
     }
 
     public Object gira(String forzato) {
@@ -90,7 +91,7 @@ public class GameService {
         Object ottenuto = getSpicchio(ruota, forzato);
         if (ottenuto.equals(SpicchiCustom.TRIPLO)) {
             int randomTriplo = utility.randomUntil(3);
-            if (ottenuto.toString().equals(forzato)){
+            if (ottenuto.toString().equals(forzato)) {
                 ottenuto = SpicchiCustom.RADDOPPIA;
             } else {
                 if (randomTriplo == 1 || randomTriplo == 3) {
@@ -118,8 +119,8 @@ public class GameService {
         return ottenuto;
     }
 
-    private Object getSpicchio(List ruota,String forzato){
-        if (forzato==null){
+    private Object getSpicchio(List ruota, String forzato) {
+        if (forzato == null) {
             return ruota.get(utility.randomUntil(ruota.size()) - 1);
         } else {
             for (Object o : ruota) {
@@ -131,20 +132,18 @@ public class GameService {
         throw new RuntimeException("Impossibile forzare: " + forzato);
     }
 
-    public int adaptLettera(Character lettera, boolean singola) {
+    public int adaptLettera(Character lettera) {
         StringBuffer nuovaFrase = new StringBuffer();
         int ret = 0;
-        boolean firstAdapt=false;
         char[] frase = getTabelloneTurno().getFrase().toCharArray();
         char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
-        Set<Character> consonantiMancanti=new HashSet<>();
-        Set<Character> vocaliMancanti=new HashSet<>();
+        Set<Character> consonantiMancanti = new HashSet<>();
+        Set<Character> vocaliMancanti = new HashSet<>();
         for (int i = 0; i < frase.length; i++) {
             char attInProgress = inProgress[i];
             char attChar = frase[i];
             Character attCharConverted = convertiCarattere(attChar);
-            if (attInProgress == PLACEHOLDER && attCharConverted == lettera && (!singola || singola && !firstAdapt)) {
-                firstAdapt=true;
+            if (attInProgress == PLACEHOLDER && attCharConverted == lettera) {
                 ret++;
                 nuovaFrase.append(attChar);
             } else {
@@ -164,9 +163,25 @@ public class GameService {
             }
         }
         this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
-        getTabelloneInProgress().setConsonantiFinite(consonantiMancanti.size()==0);
-        getTabelloneInProgress().setVocaliFinite(vocaliMancanti.size()==0);
+        getTabelloneInProgress().setConsonantiFinite(consonantiMancanti.size() == 0);
+        getTabelloneInProgress().setVocaliFinite(vocaliMancanti.size() == 0);
         return ret;
+    }
+
+    public void adaptLetteraPosizione(int posizione) {
+        StringBuffer nuovaFrase = new StringBuffer();
+        char[] frase = getTabelloneTurno().getFrase().toCharArray();
+        char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
+        for (int i = 0; i < frase.length; i++) {
+            char attInProgress = inProgress[i];
+            char attChar = frase[i];
+            if (attInProgress == PLACEHOLDER && posizione == i) {
+                nuovaFrase.append(attChar);
+            } else {
+                nuovaFrase.append(attInProgress);
+            }
+        }
+        this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
     }
 
     Character convertiCarattere(char c) {
@@ -204,18 +219,22 @@ public class GameService {
 
     public void setTabelloneTurno(Tabellone tabellone) {
         StringBuffer nuovaFrase = new StringBuffer();
+        posLettere = new HashMap<>();
         this.tabelloneTurno = tabellone;
-        char[] charArray = tabellone.getFrase().toCharArray();
-        for (char c : charArray) {
+        char[] frase = tabellone.getFrase().toCharArray();
+        for (int i = 0; i < frase.length; i++) {
+            char c = frase[i];
             if (c == ' ') {
                 nuovaFrase.append(" ");
             } else if (c == '\'') {
                 nuovaFrase.append("'");
             } else {
+                Character attInProgress = convertiCarattere(c);
+                posLettere.computeIfAbsent(attInProgress, (x) -> new ArrayList<>()).add(i);
                 nuovaFrase.append(PLACEHOLDER);
             }
         }
-        this.tabelloneInProgress = new Tabellone(tabellone.getTitolo() + "," + nuovaFrase.toString());
+        this.tabelloneInProgress = new Tabellone(tabellone.getTitolo() + "," + nuovaFrase);
     }
 
     public void addGiocatori(String giocatoreNome) {
@@ -239,14 +258,14 @@ public class GameService {
         raddoppiaUse = false;
         jollyUse = false;
         valoreCresce = 1000;
-        fase = Fase.GIRA;
+        fase = Fase.SETUP;
         tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
         }
     }
 
-    public void nextGiocatore(){
+    public void nextGiocatore() {
         List<Giocatore> list = new ArrayList<>(giocatori);
         int idx = list.indexOf(giocatoreTurno);
         if (idx == -1) throw new NoSuchElementException();
@@ -254,17 +273,17 @@ public class GameService {
         fase = Fase.GIRA;
     }
 
-    public void addJollyGiocatore(){
+    public void addJollyGiocatore() {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
         giocatoreCorrente.setWithJolly(true);
     }
 
-    public void raddoppiaGiocatore(){
+    public void raddoppiaGiocatore() {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
-        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche()*2);
+        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() * 2);
     }
 
-    public void garageGiocatore(){
+    public void garageGiocatore() {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
         giocatoreCorrente.setWithGarage(true);
     }
@@ -330,6 +349,7 @@ JOLLY
         fraseRandom = 0;//TODO frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
+        fase = Fase.GIRA;
     }
 
     public List<Tabellone> getTabelloni() {
@@ -359,10 +379,10 @@ JOLLY
         if (fase != Fase.PARLA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase PARLA, ora sei in fase: " + fase.name());
         }
-        if (isConsonante(consonante) == false){
+        if (isConsonante(consonante) == false) {
             throw new RuntimeException("La consonante non è ammessa: " + consonante);
         }
-        int trovate = adaptLettera(consonante,false);
+        int trovate = adaptLettera(consonante);
         int numero;
         Map<String, Object> ret = new LinkedHashMap<>();
         ret.put("TROVATE", trovate);
@@ -390,14 +410,14 @@ JOLLY
             incrementaPuntiManche(punti);
             ret.put("PUNTI", punti);
         }
-        if (trovate==0){
+        if (trovate == 0) {
             nextGiocatore();
         }
         fase = Fase.GIRA;
         return ret;
     }
 
-    private boolean isVocale(Character lettera){
+    private boolean isVocale(Character lettera) {
         try {
             VocaliAmmesse.valueOf(String.valueOf(lettera));
         } catch (Exception e) {
@@ -406,7 +426,7 @@ JOLLY
         return true;
     }
 
-    private boolean isConsonante(Character lettera){
+    private boolean isConsonante(Character lettera) {
         try {
             ConsonantiAmmesse.valueOf(String.valueOf(lettera));
         } catch (Exception e) {
@@ -419,16 +439,16 @@ JOLLY
         if (fase != Fase.GIRA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase GIRA, ora sei in fase: " + fase.name());
         }
-        if (isVocale(vocale) == false){
+        if (isVocale(vocale) == false) {
             throw new RuntimeException("La vocale non è ammessa: " + vocale);
         }
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
-        if (giocatoreCorrente.getPuntiManche()<500){
+        if (giocatoreCorrente.getPuntiManche() < 500) {
             throw new RuntimeException("Non hai soldi a sufficienza: " + giocatoreCorrente.getPuntiManche());
         }
         incrementaPuntiManche(-500);
-        int trovate = adaptLettera(vocale,false);
-        if (trovate==0){
+        int trovate = adaptLettera(vocale);
+        if (trovate == 0) {
             nextGiocatore();
         }
         Map<String, Object> ret = new HashMap<>();
@@ -439,36 +459,59 @@ JOLLY
 
     public Map<String, Object> soluzione(String soluzione) {
         Map ret = new HashMap();
-        if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())){
-            ret.put("ESITO","OK");
+        if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())) {
+            ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
             giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
             giocatoreCorrente.setPuntiManche(0);
-            valoreCresce=valoreCresce+1000;
+            valoreCresce = valoreCresce + 1000;
             nextGiocatore();
-            tipoManche=TipoManche.STANDARD;
+            tipoManche = TipoManche.STANDARD;
             avvia(getGiocatoreCorrente().getNome());
         } else {
-            ret.put("ESITO","KO");
+            ret.put("ESITO", "KO");
             nextGiocatore();
         }
-        fase=Fase.GIRA;
+        fase = Fase.GIRA;
         return ret;
     }
 
     public Map<String, Object> autoSingolaChiamata() {
-        Character lettera = 'A';
-        adaptLettera(lettera,true);
-        return new HashMap<>();
+        Map<String, Object> ret = new HashMap<>();
+        //casuale da 1 a 20. Se maggiore di 3 vocale altrimenti consonante
+        boolean isVocale = true;
+        int randomed = utility.randomUntil(20);
+        if (randomed < 3) {
+            isVocale = false;
+        }
+        List<Character> caratteri = posLettere.keySet().stream().toList();
+        Character lettera = null;
+        do {
+            randomed = utility.randomUntil(caratteri.size()) - 1;
+            Character carattere = caratteri.get(randomed);
+            if ((isVocale && isVocale(carattere)) || (!isVocale && isConsonante(carattere))) {
+                lettera = carattere;
+            }
+        } while (lettera == null);
+        List<Integer> posizioniLettera = posLettere.get(lettera);
+        randomed = utility.randomUntil(posizioniLettera.size()) - 1;
+        Integer posizione = posizioniLettera.get(randomed);
+        adaptLetteraPosizione(posizione);
+        posizioniLettera.remove(posizione);
+        if (posizioniLettera.size() == 0) {
+            posLettere.remove(lettera);
+        }
+        ret.put("POSIZIONE", posizione);
+        return ret;
     }
 
-    enum Fase {GIRA, PARLA}
+    enum Fase {SETUP, GIRA, PARLA}
 
     enum TipoManche {AUTO_SINGOLA_CHIAMATA, STANDARD}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 
-    public enum VocaliAmmesse{A,E,I,O,U}
+    public enum VocaliAmmesse {A, E, I, O, U}
 
-    public enum ConsonantiAmmesse{B,C,D,F,G,H,L,M,N,P,Q,R,S,T,V,Z,J,K,W,X,Y}
+    public enum ConsonantiAmmesse {B, C, D, F, G, H, L, M, N, P, Q, R, S, T, V, Z, J, K, W, X, Y}
 }

@@ -24,6 +24,7 @@ export interface GameInfo {
   ConsonantiFinite?: string | boolean;
   Tabelloni?: number;
   TipoManche?: string;
+  POSIZIONE?: number;
   JOLLY_USE?: boolean;
   GARAGE_USE?: boolean;
   RADDOPPIA_USE?: boolean;

@@ -21,6 +21,7 @@ import { SetupComponent } from './components/setup.component';
           [giocatoreTurno]="getGiocatoreTurno()"
           [fase]="gameInfo?.Fase"
           [tipoManche]="gameInfo?.TipoManche"
+          [posizione]="gameInfo?.POSIZIONE"
           >
         </app-tabellone>
 
@@ -118,7 +119,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private handleTipoManche(): void {
-    if (this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA') {
+    if (this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' && this.gameInfo?.Fase === 'GIRA') {
       this.startAutoSingolaChiamataLoop();
       return;
     }
