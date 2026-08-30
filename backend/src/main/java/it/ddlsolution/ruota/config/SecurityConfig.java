@@ -27,7 +27,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final ExpiredJwtAuthenticationEntryPoint expiredJwtAuthenticationEntryPoint;
-    @Value("${ALLOWED_SERVERS:x}")
+    @Value("${ALLOWED_SERVERS:http://localhost:4200,http://localhost:8083}")
     private List<String> allowedServers;
 
     @Bean
