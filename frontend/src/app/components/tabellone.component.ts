@@ -46,6 +46,12 @@ import { Tabellone, Giocatore } from '../models/game.model';
               {{ fase }}
             </span>
           </div>
+          <div class="phase-info" *ngIf="tipoManche">
+            <strong>Tipo Manche:</strong> 
+            <span class="tipoManche-badge">
+              {{ tipoManche }}
+            </span>
+          </div>
           <div class="specials-info" *ngIf="giocatoreTurno.withJolly || giocatoreTurno.withGarage">
             <span *ngIf="giocatoreTurno.withJolly" class="special">🃏 JOLLY</span>
             <span *ngIf="giocatoreTurno.withGarage" class="special">🚗 GARAGE</span>
@@ -210,12 +216,25 @@ import { Tabellone, Giocatore } from '../models/game.model';
         color: white;
       }
     }
-  `]
+
+    .tipoManche-badge {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9em;
+      background: #3498db;
+      color: white;
+    }
+
+`]
 })
 export class TabelloneComponent {
   @Input() tabellone?: Tabellone;
   @Input() giocatoreTurno?: Giocatore;
   @Input() fase?: string;
+  @Input() tipoManche?: string;
 
   isTabelloneValid(): boolean {
     return typeof this.tabellone === 'object' && !!this.tabellone.frase;

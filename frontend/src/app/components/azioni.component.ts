@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="azioni-section">
-      <div class="action-group" *ngIf="canPlay">
+      <div class="action-group" *ngIf="canPlay && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
         <h3>Tenta la Soluzione</h3>
         <div class="flex-column">
           <input 
@@ -24,7 +24,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay">
+      <div class="action-group" *ngIf="canPlay && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
         <h3>Gira la Ruota</h3>
         <div class="flex-row">
           <button 
@@ -40,7 +40,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'PARLA'">
+      <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
         <h3>Chiama Consonante</h3>
         <div class="flex-row">
           <input 
@@ -58,7 +58,7 @@ import { FormsModule } from '@angular/forms';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'GIRA'">
+      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
         <h3>Compra Vocale</h3>
         <div class="vowels-grid">
           <button 
@@ -159,6 +159,7 @@ export class AzioniComponent {
   @Input() fase?: string;
   @Input() canPlay = false;
   @Input() ultimoSpicchio?: string | number;
+  @Input() tipoManche?: string;
 
   @Output() onGira = new EventEmitter<void>();
   @Output() onConsonante = new EventEmitter<string>();
@@ -181,7 +182,7 @@ export class AzioniComponent {
   }
 
   compraVocale(vocale: string): void {
-    if (confirm(`Vuoi comprare la vocale ${vocale}? (Costa punti)`)) {
+    if (confirm(`Vuoi comprare la vocale ${vocale}? (Costa 500 punti)`)) {
       this.onVocale.emit(vocale);
     }
   }

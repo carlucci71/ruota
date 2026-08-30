@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameService } from './services/game.service';
 import { GameInfo, SpinResponse, CallResponse, Tabellone, Giocatore } from './models/game.model';
@@ -19,13 +19,16 @@ import { SetupComponent } from './components/setup.component';
         <app-tabellone
           [tabellone]="getTabellone()"
           [giocatoreTurno]="getGiocatoreTurno()"
-          [fase]="gameInfo?.FASE || gameInfo?.Fase">
+          [fase]="gameInfo?.Fase"
+          [tipoManche]="gameInfo?.TipoManche"
+          >
         </app-tabellone>
 
         <app-azioni
-          [fase]="gameInfo?.FASE || gameInfo?.Fase"
+          [fase]="gameInfo?.Fase"
           [canPlay]="canPlay()"
           [ultimoSpicchio]="ultimoSpicchio"
+          [tipoManche]="gameInfo?.TipoManche"
           (onGira)="giraRuota()"
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
@@ -40,7 +43,7 @@ import { SetupComponent } from './components/setup.component';
         </app-setup>
 
         <app-giocatori
-          [giocatori]="gameInfo?.GIOCATORI || gameInfo?.Giocatori || []"
+          [giocatori]="gameInfo?.Giocatori || []"
           (onAdd)="addGiocatore($event)"
           (onDelete)="deleteGiocatore($event)"
           (onReset)="resetGiocatori()">
@@ -80,11 +83,12 @@ import { SetupComponent } from './components/setup.component';
     }
   `]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   gameInfo?: GameInfo;
   ultimoSpicchio?: string | number;
   lastMessage?: { text: string; type: string };
   showDebug = false;
+  private autoSingolaChiamataTimer?: ReturnType<typeof setInterval>;
 
   constructor(private gameService: GameService) {}
 
@@ -92,10 +96,14 @@ export class AppComponent implements OnInit {
     this.loadGameInfo();
   }
 
+  ngOnDestroy(): void {
+    this.stopAutoSingolaChiamataLoop();
+  }
+
   loadGameInfo(): void {
     this.gameService.getGameInfo().subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
       },
       error: (err) => {
         console.error('Errore caricamento info gioco:', err);
@@ -104,8 +112,47 @@ export class AppComponent implements OnInit {
     });
   }
 
+  private setGameInfo(data: GameInfo): void {
+    this.gameInfo = data;
+    this.handleTipoManche();
+  }
+
+  private handleTipoManche(): void {
+    if (this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA') {
+      this.startAutoSingolaChiamataLoop();
+      return;
+    }
+
+    this.stopAutoSingolaChiamataLoop();
+  }
+
+  private startAutoSingolaChiamataLoop(): void {
+    if (this.autoSingolaChiamataTimer) {
+      return;
+    }
+
+    this.autoSingolaChiamataTimer = setInterval(() => {
+      this.gameService.autoSingolaChiamata().subscribe({
+        next: (data) => {
+          this.setGameInfo(data);
+        },
+        error: (err) => {
+          console.error('Errore auto singola chiamata:', err);
+          this.showMessage('Errore chiamata automatica', 'error');
+        }
+      });
+    }, 3000);
+  }
+
+  private stopAutoSingolaChiamataLoop(): void {
+    if (this.autoSingolaChiamataTimer) {
+      clearInterval(this.autoSingolaChiamataTimer);
+      this.autoSingolaChiamataTimer = undefined;
+    }
+  }
+
   canStartGame(): boolean {
-    const giocatori = this.gameInfo?.GIOCATORI || this.gameInfo?.Giocatori || [];
+    const giocatori = this.gameInfo?.Giocatori || [];
     const tabelloneTitolo = this.gameInfo?.['Tabellone titolo'];
     const tabellone = this.gameInfo?.TABELLONE;
     
@@ -119,7 +166,7 @@ export class AppComponent implements OnInit {
   }
 
   canPlay(): boolean {
-    const fase = this.gameInfo?.FASE || this.gameInfo?.Fase;
+    const fase = this.gameInfo?.Fase;
     return this.gameInfo !== undefined && 
            (fase === 'GIRA' || fase === 'PARLA');
   }
@@ -147,14 +194,14 @@ export class AppComponent implements OnInit {
   }
 
   getGiocatoreTurno(): Giocatore | undefined {
-    const giocatore = this.gameInfo?.GIOCATORE_TURNO || this.gameInfo?.GiocatoreTurno;
+    const giocatore = this.gameInfo?.GiocatoreTurno;
     if (typeof giocatore === 'object' && giocatore?.nome) {
       return giocatore;
     }
     
     // Se GiocatoreTurno è una stringa con il nome, cerca il giocatore nella lista
     if (typeof giocatore === 'string' && giocatore !== '--') {
-      const giocatori = this.gameInfo?.GIOCATORI || this.gameInfo?.Giocatori || [];
+      const giocatori = this.gameInfo?.Giocatori || [];
       return giocatori.find(g => g.nome.toUpperCase() === giocatore.toUpperCase());
     }
     
@@ -164,7 +211,7 @@ export class AppComponent implements OnInit {
   addGiocatore(nome: string): void {
     this.gameService.addGiocatore(nome).subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.showMessage(`Giocatore ${nome} aggiunto!`, 'success');
       },
       error: (err) => {
@@ -176,7 +223,7 @@ export class AppComponent implements OnInit {
   deleteGiocatore(nome: string): void {
     this.gameService.deleteGiocatore(nome).subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.showMessage(`Giocatore ${nome} eliminato`, 'info');
       },
       error: (err) => {
@@ -188,7 +235,7 @@ export class AppComponent implements OnInit {
   resetGiocatori(): void {
     this.gameService.resetGiocatori().subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.showMessage('Tutti i giocatori sono stati resettati', 'info');
       },
       error: (err) => {
@@ -200,7 +247,7 @@ export class AppComponent implements OnInit {
   initGame(): void {
     this.gameService.initGame().subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.ultimoSpicchio = undefined;
         this.showMessage('Gioco resettato completamente', 'info');
       },
@@ -214,7 +261,7 @@ export class AppComponent implements OnInit {
     const nomeGiocatore = nome.trim() || null;
     this.gameService.avviaGame(nomeGiocatore!).subscribe({
       next: (data) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.showMessage('Gioco avviato! Gira la ruota!', 'success');
       },
       error: (err) => {
@@ -226,7 +273,7 @@ export class AppComponent implements OnInit {
   giraRuota(): void {
     this.gameService.giraRuota().subscribe({
       next: (data: SpinResponse) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         this.ultimoSpicchio = data.SPICCHIO;
         this.showMessage(`Hai ottenuto: ${data.SPICCHIO}`, 'success');
       },
@@ -244,7 +291,7 @@ export class AppComponent implements OnInit {
 
     this.gameService.chiamaConsonante(consonante, this.ultimoSpicchio).subscribe({
       next: (data: CallResponse) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         
         if (data.LETTERE_GIA_CHIAMATE) {
           this.showMessage(`La lettera ${consonante} è già stata chiamata!`, 'error');
@@ -269,7 +316,7 @@ export class AppComponent implements OnInit {
   compraVocale(vocale: string): void {
     this.gameService.compraVocale(vocale).subscribe({
       next: (data: CallResponse) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         
         if (data.LETTERE_GIA_CHIAMATE) {
           this.showMessage(`La vocale ${vocale} è già stata chiamata!`, 'error');
@@ -294,7 +341,7 @@ export class AppComponent implements OnInit {
   tentaSoluzione(soluzione: string): void {
     this.gameService.tentaSoluzione(soluzione).subscribe({
       next: (data: CallResponse) => {
-        this.gameInfo = data;
+        this.setGameInfo(data);
         
         if (data.RISULTATO) {
           this.showMessage('🎉 SOLUZIONE CORRETTA! HAI VINTO! 🎉', 'success');

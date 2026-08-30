@@ -44,6 +44,10 @@ export class GameService {
     return this.http.get<CallResponse>(`${this.apiUrl}/game/vocale`, { params });
   }
 
+  autoSingolaChiamata(): Observable<GameInfo> {
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/autoSingolaChiamata`);
+  }
+
   tentaSoluzione(soluzione: string): Observable<CallResponse> {
     const params = new HttpParams().set('soluzione', soluzione);
     return this.http.get<CallResponse>(`${this.apiUrl}/game/soluzione`, { params });

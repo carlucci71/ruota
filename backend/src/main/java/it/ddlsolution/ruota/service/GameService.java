@@ -29,6 +29,7 @@ public class GameService {
     private Set<Giocatore> giocatori;
     private List<Tabellone> tabelloni;
     private Fase fase;
+    private TipoManche tipoManche;
     private boolean jollyUse;
     private boolean garageUse;
     private boolean raddoppiaUse;
@@ -130,9 +131,10 @@ public class GameService {
         throw new RuntimeException("Impossibile forzare: " + forzato);
     }
 
-    public int adaptLettera(Character lettera) {
+    public int adaptLettera(Character lettera, boolean singola) {
         StringBuffer nuovaFrase = new StringBuffer();
         int ret = 0;
+        boolean firstAdapt=false;
         char[] frase = getTabelloneTurno().getFrase().toCharArray();
         char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
         Set<Character> consonantiMancanti=new HashSet<>();
@@ -141,7 +143,8 @@ public class GameService {
             char attInProgress = inProgress[i];
             char attChar = frase[i];
             Character attCharConverted = convertiCarattere(attChar);
-            if (attInProgress == PLACEHOLDER && attCharConverted == lettera) {
+            if (attInProgress == PLACEHOLDER && attCharConverted == lettera && (!singola || singola && !firstAdapt)) {
+                firstAdapt=true;
                 ret++;
                 nuovaFrase.append(attChar);
             } else {
@@ -237,6 +240,7 @@ public class GameService {
         jollyUse = false;
         valoreCresce = 1000;
         fase = Fase.GIRA;
+        tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
         }
@@ -347,6 +351,7 @@ JOLLY
         ret.put("GiocatoreTurno", getGiocatoreTurno() == null ? "--" : getGiocatoreTurno().getNome());
         ret.put("Giocatori", getGiocatori());
         ret.put("Fase", getFase());
+        ret.put("TipoManche", getTipoManche());
         return ret;
     }
 
@@ -354,12 +359,10 @@ JOLLY
         if (fase != Fase.PARLA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase PARLA, ora sei in fase: " + fase.name());
         }
-        try {
-            ConsonantiAmmesse.valueOf(String.valueOf(consonante));
-        } catch (Exception e) {
+        if (isConsonante(consonante) == false){
             throw new RuntimeException("La consonante non è ammessa: " + consonante);
         }
-        int trovate = adaptLettera(consonante);
+        int trovate = adaptLettera(consonante,false);
         int numero;
         Map<String, Object> ret = new LinkedHashMap<>();
         ret.put("TROVATE", trovate);
@@ -394,13 +397,29 @@ JOLLY
         return ret;
     }
 
+    private boolean isVocale(Character lettera){
+        try {
+            VocaliAmmesse.valueOf(String.valueOf(lettera));
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isConsonante(Character lettera){
+        try {
+            ConsonantiAmmesse.valueOf(String.valueOf(lettera));
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
     public Map<String, Object> compraVocale(Character vocale) {
         if (fase != Fase.GIRA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase GIRA, ora sei in fase: " + fase.name());
         }
-        try {
-            VocaliAmmesse.valueOf(String.valueOf(vocale));
-        } catch (Exception e) {
+        if (isVocale(vocale) == false){
             throw new RuntimeException("La vocale non è ammessa: " + vocale);
         }
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
@@ -408,7 +427,7 @@ JOLLY
             throw new RuntimeException("Non hai soldi a sufficienza: " + giocatoreCorrente.getPuntiManche());
         }
         incrementaPuntiManche(-500);
-        int trovate = adaptLettera(vocale);
+        int trovate = adaptLettera(vocale,false);
         if (trovate==0){
             nextGiocatore();
         }
@@ -427,6 +446,7 @@ JOLLY
             giocatoreCorrente.setPuntiManche(0);
             valoreCresce=valoreCresce+1000;
             nextGiocatore();
+            tipoManche=TipoManche.STANDARD;
             avvia(getGiocatoreCorrente().getNome());
         } else {
             ret.put("ESITO","KO");
@@ -436,7 +456,15 @@ JOLLY
         return ret;
     }
 
+    public Map<String, Object> autoSingolaChiamata() {
+        Character lettera = 'A';
+        adaptLettera(lettera,true);
+        return new HashMap<>();
+    }
+
     enum Fase {GIRA, PARLA}
+
+    enum TipoManche {AUTO_SINGOLA_CHIAMATA, STANDARD}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 

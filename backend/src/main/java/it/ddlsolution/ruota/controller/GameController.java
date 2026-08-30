@@ -1,9 +1,7 @@
 package it.ddlsolution.ruota.controller;
 
-import it.ddlsolution.ruota.dto.Tabellone;
 import it.ddlsolution.ruota.dto.request.AvviaDTO;
 import it.ddlsolution.ruota.service.GameService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -80,6 +76,14 @@ public class GameController {
         Map<String, Object> callSoluzione = gameService.soluzione(soluzione);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(callSoluzione);
+        return ResponseEntity.ok(ret);
+    }
+
+    @GetMapping("/autoSingolaChiamata")
+    public ResponseEntity<Map<String, Object>> autoSingolaChiamata() {
+        Map<String, Object> autoSingolaChiamata = gameService.autoSingolaChiamata();
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.putAll(autoSingolaChiamata);
         return ResponseEntity.ok(ret);
     }
 
