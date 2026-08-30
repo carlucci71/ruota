@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="azioni-section">
-      <div class="action-group" *ngIf="canPlay && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
+      <div class="action-group" *ngIf="canPlay">
         <h3>Tenta la Soluzione</h3>
         <div class="flex-column">
           <input 

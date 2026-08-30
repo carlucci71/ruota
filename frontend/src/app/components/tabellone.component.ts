@@ -10,15 +10,18 @@ import { Tabellone, Giocatore } from '../models/game.model';
     <div class="tabellone-section">
       <div class="game-board" *ngIf="tabellone && isTabelloneValid()">
         <div class="category">
-          <strong>Categoria:</strong> {{ tabellone.titolo }}
+          <strong> {{ tabellone.titolo }} </strong>
         </div>
         
         <div class="frase">
-          <div class="letter" *ngFor="let char of getFraseArray()" 
-               [class.space]="char === ' '">
-            <span [class.revealed]="char !== '-' && char !== ' '">
-              {{ char === '-' ? '' : (char === ' ' ? ' ' : char) }}
-            </span>
+          <div class="frase-row" *ngFor="let row of getFraseRows()">
+            <div class="word" *ngFor="let word of row">
+              <div class="letter" *ngFor="let char of word.split('')">
+                <span [class.revealed]="char !== '-'">
+                  {{ char === '-' ? '' : char }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -85,33 +88,45 @@ import { Tabellone, Giocatore } from '../models/game.model';
 
     .frase {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
       margin: 25px 0;
       min-height: 100px;
+    }
+
+    .frase-row {
+      display: flex;
+      justify-content: center;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .word {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-shrink: 0;
     }
 
     .letter {
-      width: 45px;
-      height: 55px;
+      --cell-size: clamp(22px, 2.2vw, 38px);
+      width: var(--cell-size);
+      height: calc(var(--cell-size) * 1.25);
       display: flex;
       align-items: center;
       justify-content: center;
       background: white;
       border: 3px solid #e67e22;
       border-radius: 8px;
-      font-size: 1.8em;
+      font-size: clamp(0.9rem, 1.5vw, 1.5rem);
       font-weight: bold;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      
-      &.space {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        width: 20px;
-      }
+      flex-shrink: 0;
       
       span {
         color: #999;
@@ -240,8 +255,33 @@ export class TabelloneComponent {
     return typeof this.tabellone === 'object' && !!this.tabellone.frase;
   }
 
-  getFraseArray(): string[] {
-    if (!this.tabellone || typeof this.tabellone !== 'object') return [];
-    return this.tabellone.frase.split('');
+  getFraseRows(): string[][] {
+    if (!this.tabellone || typeof this.tabellone !== 'object' || !this.tabellone.frase) {
+      return [];
+    }
+
+    const words = this.tabellone.frase.split(/\s+/).filter(word => word.length > 0);
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentCount = 0;
+
+    for (const word of words) {
+      const wordLength = word.length;
+
+      if (currentRow.length > 0 && currentCount + wordLength > 18) {
+        rows.push(currentRow);
+        currentRow = [];
+        currentCount = 0;
+      }
+
+      currentRow.push(word);
+      currentCount += wordLength;
+    }
+
+    if (currentRow.length > 0) {
+      rows.push(currentRow);
+    }
+
+    return rows;
   }
 }
