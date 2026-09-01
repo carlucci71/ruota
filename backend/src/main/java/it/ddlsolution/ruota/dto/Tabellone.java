@@ -23,9 +23,11 @@ public class Tabellone {
         char[] charArray = frase.toCharArray();
         for (int i = 0;i<charArray.length;i++){
             char c = charArray[i];
-            //Scrivo ' solo se il carattere prima non è placeholder
+            //Scrivo ' solo se il carattere prima non è placeholder altrimenti scrivo spazio
             if (c != '\'' || (c == '\'' && charArray[i-1] != GameService.PLACEHOLDER)){
                 sb.append(c);
+            } else {
+                sb.append(" ");
             }
         }
         return sb.toString();

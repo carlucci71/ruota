@@ -372,6 +372,7 @@ JOLLY
         ret.put("Giocatori", getGiocatori());
         ret.put("Fase", getFase());
         ret.put("TipoManche", getTipoManche());
+        ret.put("PosLettere", posLettere);
         return ret;
     }
 
@@ -478,30 +479,46 @@ JOLLY
 
     public Map<String, Object> autoSingolaChiamata() {
         Map<String, Object> ret = new HashMap<>();
-        //casuale da 1 a 20. Se maggiore di 3 vocale altrimenti consonante
-        boolean isVocale = true;
-        int randomed = utility.randomUntil(20);
-        if (randomed < 3) {
-            isVocale = false;
-        }
-        List<Character> caratteri = posLettere.keySet().stream().toList();
-        Character lettera = null;
-        do {
-            randomed = utility.randomUntil(caratteri.size()) - 1;
-            Character carattere = caratteri.get(randomed);
-            if ((isVocale && isVocale(carattere)) || (!isVocale && isConsonante(carattere))) {
-                lettera = carattere;
+        if (posLettere.size() > 0 && fase == Fase.GIRA) {
+            //casuale da 1 a 20. Se maggiore di 3 vocale altrimenti consonante
+            List<Character> caratteri = posLettere.keySet().stream().toList();
+            boolean isVocale = true;
+            int randomed = utility.randomUntil(20);
+            if (randomed < 3) {
+                isVocale = false;
             }
-        } while (lettera == null);
-        List<Integer> posizioniLettera = posLettere.get(lettera);
-        randomed = utility.randomUntil(posizioniLettera.size()) - 1;
-        Integer posizione = posizioniLettera.get(randomed);
-        adaptLetteraPosizione(posizione);
-        posizioniLettera.remove(posizione);
-        if (posizioniLettera.size() == 0) {
-            posLettere.remove(lettera);
+            //Se isVocale ma le vocali sono finite allora lo forzo a false
+            if (isVocale && caratteri.stream().filter(c -> isVocale(c)).count() == 0) {
+                isVocale = false;
+            }
+            //Se !isVocale ma le consonanti sono finite allora lo forzo a true
+            if (!isVocale && caratteri.stream().filter(c -> isConsonante(c)).count() == 0) {
+                isVocale = true;
+            }
+            Character lettera = null;
+            do {
+                randomed = utility.randomUntil(caratteri.size()) - 1;
+                Character carattere = caratteri.get(randomed);
+                if ((isVocale && isVocale(carattere)) || (!isVocale && isConsonante(carattere))) {
+                    lettera = carattere;
+                }
+            } while (lettera == null);
+            List<Integer> posizioniLettera = posLettere.get(lettera);
+            randomed = utility.randomUntil(posizioniLettera.size()) - 1;
+            Integer posizione = posizioniLettera.get(randomed);
+            adaptLetteraPosizione(posizione);
+            posizioniLettera.remove(posizione);
+            if (posizioniLettera.size() == 0) {
+                posLettere.remove(lettera);
+            }
+            ret.put("POSIZIONE", posizione);
+            caratteri = posLettere.keySet().stream().toList();
+            getTabelloneInProgress().setConsonantiFinite(caratteri.stream().filter(c -> isConsonante(c)).count() == 0);
+            getTabelloneInProgress().setVocaliFinite(caratteri.stream().filter(c -> isVocale(c)).count() == 0);
+        } else {
+            getTabelloneInProgress().setConsonantiFinite(true);
+            getTabelloneInProgress().setVocaliFinite(true);
         }
-        ret.put("POSIZIONE", posizione);
         return ret;
     }
 

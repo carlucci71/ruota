@@ -56,12 +56,14 @@ import { Tabellone, Giocatore } from '../models/game.model';
               {{ tipoManche }}
             </span>
           </div>
+          <!--
           <div class="phase-info" *ngIf="posizione !== undefined && posizione !== null">
             <strong>Posizione:</strong> 
             <span class="tipoManche-badge">
               {{ posizione }}
             </span>
           </div>
+          -->
           <div class="specials-info" *ngIf="giocatoreTurno.withJolly || giocatoreTurno.withGarage">
             <span *ngIf="giocatoreTurno.withJolly" class="special">🃏 JOLLY</span>
             <span *ngIf="giocatoreTurno.withGarage" class="special">🚗 GARAGE</span>
