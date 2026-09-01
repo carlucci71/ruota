@@ -21,6 +21,18 @@ import { FormsModule } from '@angular/forms';
             [disabled]="!soluzione">
             🎯 RISOLVI
           </button>
+          <button 
+            class="btn-warning btn-large" 
+            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo"
+            (click)="stopTimer()">
+            ⏹️ STOP TIMER
+          </button>
+          <button 
+            class="btn-primary btn-large" 
+            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo"
+            (click)="startTimer()">
+            ▶️ START TIMER
+          </button>
         </div>
       </div>
 
@@ -160,11 +172,14 @@ export class AzioniComponent {
   @Input() canPlay = false;
   @Input() ultimoSpicchio?: string | number;
   @Input() tipoManche?: string;
+  @Input() timerAttivo = false;
 
   @Output() onGira = new EventEmitter<void>();
   @Output() onConsonante = new EventEmitter<string>();
   @Output() onVocale = new EventEmitter<string>();
   @Output() onSoluzione = new EventEmitter<string>();
+  @Output() onStopTimer = new EventEmitter<void>();
+  @Output() onStartTimer = new EventEmitter<void>();
 
   consonante = '';
   soluzione = '';
@@ -192,6 +207,14 @@ export class AzioniComponent {
       this.onSoluzione.emit(this.soluzione);
       this.soluzione = '';
     }
+  }
+
+  stopTimer(): void {
+    this.onStopTimer.emit();
+  }
+
+  startTimer(): void {
+    this.onStartTimer.emit();
   }
 
   isConsonante(char: string): boolean {

@@ -30,10 +30,13 @@ import { SetupComponent } from './components/setup.component';
           [canPlay]="canPlay()"
           [ultimoSpicchio]="ultimoSpicchio"
           [tipoManche]="gameInfo?.TipoManche"
+          [timerAttivo]="isTimerAttivo()"
           (onGira)="giraRuota()"
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
-          (onSoluzione)="tentaSoluzione($event)">
+          (onSoluzione)="tentaSoluzione($event)"
+          (onStopTimer)="stopAutoSingolaChiamataLoop()"
+          (onStartTimer)="startAutoSingolaChiamataLoop()">
         </app-azioni>
 
         <app-setup
@@ -127,7 +130,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.stopAutoSingolaChiamataLoop();
   }
 
-  private startAutoSingolaChiamataLoop(): void {
+  isTimerAttivo(): boolean {
+    return !!this.autoSingolaChiamataTimer;
+  }
+
+  startAutoSingolaChiamataLoop(): void {
     if (this.autoSingolaChiamataTimer) {
       return;
     }
@@ -145,7 +152,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }, 3000);
   }
 
-  private stopAutoSingolaChiamataLoop(): void {
+  stopAutoSingolaChiamataLoop(): void {
     if (this.autoSingolaChiamataTimer) {
       clearInterval(this.autoSingolaChiamataTimer);
       this.autoSingolaChiamataTimer = undefined;
