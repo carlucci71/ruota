@@ -152,13 +152,13 @@ import { Giocatore } from '../models/game.model';
 
     .vowels-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(15, 1fr);
+      gap: 8px;
     }
 
     .vowel-btn {
-      font-size: 1.5em;
-      padding: 15px;
+      font-size: 0.8em;
+      padding: 5px;
       aspect-ratio: 1;
     }
 
@@ -187,7 +187,7 @@ import { Giocatore } from '../models/game.model';
 
     @media (max-width: 768px) {
       .vowels-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(9, 1fr);
       }
     }
   `]
