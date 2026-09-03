@@ -6,15 +6,18 @@ import { GiocatoriComponent } from './components/giocatori.component';
 import { TabelloneComponent } from './components/tabellone.component';
 import { AzioniComponent } from './components/azioni.component';
 import { SetupComponent } from './components/setup.component';
+import { MessaggioComponent } from './components/messaggio.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, GiocatoriComponent, TabelloneComponent, AzioniComponent, SetupComponent],
+  imports: [CommonModule, GiocatoriComponent, TabelloneComponent, AzioniComponent, SetupComponent, MessaggioComponent],
   template: `
     <div class="container">
       <h1>🎡 RUOTA DELLA FORTUNA 🎡</h1>
       
+      <app-messaggio [lastMessage]="lastMessage"></app-messaggio>
+
       <div class="game-container">
         <app-tabellone
           [tabellone]="getTabellone()"
@@ -57,7 +60,6 @@ import { SetupComponent } from './components/setup.component';
         <app-setup
           [fase]="gameInfo?.Fase"
           [canStart]="canStartGame()"
-          [lastMessage]="lastMessage"
           (onAvvia)="avviaGame($event)"
           (onReset)="initGame()">
         </app-setup>
@@ -301,7 +303,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.gameService.avviaGame(nomeGiocatore!).subscribe({
       next: (data) => {
         this.setGameInfo(data);
-        this.showMessage('Gioco avviato! Gira la ruota!', 'success');
+        this.showMessage('Gioco avviato!', 'success');
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore avvio gioco', 'error');

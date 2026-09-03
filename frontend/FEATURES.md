@@ -79,7 +79,7 @@ I messaggi appaiono in alto nelle azioni con colori diversi:
 1. **Setup**:
    - Aggiungi "Mario" → ✅ Giocatore Mario aggiunto!
    - Aggiungi "Luigi" → ✅ Giocatore Luigi aggiunto!
-   - Clicca "Avvia Gioco" → ✅ Gioco avviato! Gira la ruota!
+   - Clicca "Avvia Gioco" → ✅ Gioco avviato! 
 
 2. **Turno di Mario**:
    - Stato: "🎯 Turno di: MARIO"

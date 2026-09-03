@@ -8,10 +8,6 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="setup-section">
-      <div class="message" *ngIf="lastMessage" [ngClass]="lastMessage.type">
-        {{ lastMessage.text }}
-      </div>
-
       <div class="action-group">
         <div class="flex-row">
           <input 
@@ -58,36 +54,11 @@ import { FormsModule } from '@angular/forms';
       }
     }
 
-    .message {
-      padding: 15px;
-      border-radius: 8px;
-      margin: 15px 0;
-      font-weight: 500;
-      
-      &.success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-      
-      &.error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-      
-      &.info {
-        background: #d1ecf1;
-        color: #0c5460;
-        border: 1px solid #bee5eb;
-      }
-    }
-  `]
+    `]
 })
 export class SetupComponent {
   @Input() canStart = false;
   @Input() fase?: string;
-  @Input() lastMessage?: { text: string; type: string };
 
   @Output() onAvvia = new EventEmitter<string>();
   @Output() onReset = new EventEmitter<void>();

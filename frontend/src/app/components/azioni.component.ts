@@ -11,7 +11,10 @@ import { Giocatore } from '../models/game.model';
     <div class="azioni-section">
       <div class="action-group" *ngIf="canPlay">
         <div class="flex-column">
-          <h2>PRENOTATI PER DARE LA SOLUZIONE</h2>
+          <h2  *ngIf="giocatori && giocatori.length > 0 && 
+          fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo">
+          PRENOTATI PER DARE LA SOLUZIONE
+        </h2>
           <div class="players-list" *ngIf="giocatori && giocatori.length > 0 && 
           fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo">
             <span class="player-card" *ngFor="let giocatore of giocatori">
