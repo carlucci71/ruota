@@ -28,6 +28,7 @@ public class GameService {
     private Tabellone tabelloneInProgress;
     private Map<Character, List<Integer>> posLettere;
     private Set<Giocatore> giocatori;
+    private String nomeGiocatorePrenotato;
     private List<Tabellone> tabelloni;
     private Fase fase;
     private TipoManche tipoManche;
@@ -42,7 +43,12 @@ public class GameService {
     }
 
     private Giocatore getGiocatoreCorrente() {
-        String nome = giocatoreTurno.getNome();
+        String nome;
+        if (tipoManche==TipoManche.STANDARD) {
+            nome = giocatoreTurno.getNome();
+        } else {
+            nome = nomeGiocatorePrenotato;
+        }
         Giocatore giocatoreCorrente = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
         return giocatoreCorrente;
     }
@@ -372,7 +378,7 @@ JOLLY
         ret.put("Giocatori", getGiocatori());
         ret.put("Fase", getFase());
         ret.put("TipoManche", getTipoManche());
-        ret.put("PosLettere", posLettere);
+//        ret.put("PosLettere", posLettere);
         return ret;
     }
 
@@ -460,6 +466,8 @@ JOLLY
 
     public Map<String, Object> soluzione(String soluzione) {
         Map ret = new HashMap();
+        System.out.println("tipoManche = " + tipoManche);
+        System.out.println("nomeGiocatorePrenotato = " + nomeGiocatorePrenotato);
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
@@ -474,6 +482,13 @@ JOLLY
             nextGiocatore();
         }
         fase = Fase.GIRA;
+        return ret;
+    }
+
+    public Map<String, Object> prenota(String nome) {
+        Map<String, Object> ret = new HashMap<>();
+        this.nomeGiocatorePrenotato=nome;
+        ret.put("Prenota", nome);
         return ret;
     }
 

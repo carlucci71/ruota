@@ -8,8 +8,6 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="setup-section">
-      <h2>🎬 Inizia Partita</h2>
-
       <div class="message" *ngIf="lastMessage" [ngClass]="lastMessage.type">
         {{ lastMessage.text }}
       </div>
@@ -17,11 +15,13 @@ import { FormsModule } from '@angular/forms';
       <div class="action-group">
         <div class="flex-row">
           <input 
+            *ngIf="fase === 'SETUP'"
             type="text" 
             [(ngModel)]="nomePerAvvio" 
             placeholder="Nome giocatore iniziale (opzionale)"
             [disabled]="!canStart">
           <button 
+            *ngIf="fase === 'SETUP'"
             class="btn-success" 
             (click)="avvia()"
             [disabled]="!canStart">
@@ -86,6 +86,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class SetupComponent {
   @Input() canStart = false;
+  @Input() fase?: string;
   @Input() lastMessage?: { text: string; type: string };
 
   @Output() onAvvia = new EventEmitter<string>();

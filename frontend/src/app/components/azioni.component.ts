@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Giocatore } from '../models/game.model';
 
 @Component({
   selector: 'app-azioni',
@@ -9,30 +10,45 @@ import { FormsModule } from '@angular/forms';
   template: `
     <div class="azioni-section">
       <div class="action-group" *ngIf="canPlay">
-        <h3>Tenta la Soluzione</h3>
         <div class="flex-column">
+          <h2>PRENOTATI PER DARE LA SOLUZIONE</h2>
+          <div class="players-list" *ngIf="giocatori && giocatori.length > 0 && 
+          fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo">
+            <span class="player-card" *ngFor="let giocatore of giocatori">
+              <button class="btn-danger btn-small" (click)="provaSoluzioneAutoChiamata(giocatore.nome)">
+                {{ giocatore.nome }}
+              </button>
+            </span>
+          </div>
+
+          <button 
+            class="btn-primary btn-large" 
+            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo"
+            (click)="startTimer()">
+            ▶️ RIPRENDI TIMER
+          </button>
+          <span
+            *ngIf="fase === 'GIRA' && tipoManche != 'AUTO_SINGOLA_CHIAMATA'
+            || (fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo)"
+          >
+
+
+
+<div class="action-group">
+        <div class="flex-row">
           <input 
             type="text" 
             [(ngModel)]="soluzione" 
             placeholder="Scrivi la soluzione completa">
           <button 
-            class="btn-success btn-large" 
+            class="btn-success btn-success" 
             (click)="tentaSoluzione()"
             [disabled]="!soluzione">
             🎯 RISOLVI
           </button>
-          <button 
-            class="btn-warning btn-large" 
-            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo"
-            (click)="stopTimer()">
-            ⏹️ STOP TIMER
-          </button>
-          <button 
-            class="btn-primary btn-large" 
-            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo"
-            (click)="startTimer()">
-            ▶️ START TIMER
-          </button>
+        </div>
+      </div>
+          </span>
         </div>
       </div>
 
@@ -119,6 +135,12 @@ import { FormsModule } from '@angular/forms';
       gap: 10px;
     }
 
+    .players-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     .btn-large {
       font-size: 1.2em;
       padding: 15px 30px;
@@ -168,6 +190,7 @@ import { FormsModule } from '@angular/forms';
   `]
 })
 export class AzioniComponent {
+  @Input() giocatori: Giocatore[] = [];
   @Input() fase?: string;
   @Input() canPlay = false;
   @Input() ultimoSpicchio?: string | number;
@@ -180,6 +203,7 @@ export class AzioniComponent {
   @Output() onSoluzione = new EventEmitter<string>();
   @Output() onStopTimer = new EventEmitter<void>();
   @Output() onStartTimer = new EventEmitter<void>();
+  @Output() onPrenota = new EventEmitter<string>();
 
   consonante = '';
   soluzione = '';
@@ -215,6 +239,11 @@ export class AzioniComponent {
 
   startTimer(): void {
     this.onStartTimer.emit();
+  }
+
+  provaSoluzioneAutoChiamata(nome: string): void {
+      this.stopTimer();
+      this.onPrenota.emit(nome);
   }
 
   isConsonante(char: string): boolean {

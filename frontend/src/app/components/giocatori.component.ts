@@ -9,9 +9,8 @@ import { Giocatore } from '../models/game.model';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="giocatori-section">
-      <h2>👥 Gestione Giocatori</h2>
       
-      <div class="add-player">
+      <div class="add-player" *ngIf="fase === 'SETUP'">
         <input 
           type="text" 
           [(ngModel)]="nuovoGiocatore" 
@@ -23,7 +22,6 @@ import { Giocatore } from '../models/game.model';
       </div>
 
       <div class="players-list" *ngIf="giocatori && giocatori.length > 0">
-        <h3>Giocatori iscritti:</h3>
         <div class="player-card" *ngFor="let giocatore of giocatori">
           <div class="player-info">
             <span class="player-name">{{ giocatore.nome }}</span>
@@ -34,13 +32,14 @@ import { Giocatore } from '../models/game.model';
               <span class="badge" *ngIf="giocatore.withGarage">🚗 GARAGE</span>
             </div>
           </div>
-          <button class="btn-danger btn-small" (click)="elimina(giocatore.nome)">
-            ❌
+          <button class="btn-danger btn-small" (click)="elimina(giocatore.nome)"
+              *ngIf="fase === 'SETUP'">
+            ELIMINA
           </button>
         </div>
       </div>
 
-      <div class="actions" *ngIf="giocatori && giocatori.length > 0">
+      <div class="actions" *ngIf="giocatori && giocatori.length > 0 && fase === 'SETUP'">
         <button class="btn-danger" (click)="resetTutti()">
           Reset Tutti i Giocatori
         </button>
@@ -133,6 +132,7 @@ import { Giocatore } from '../models/game.model';
 })
 export class GiocatoriComponent {
   @Input() giocatori: Giocatore[] = [];
+  @Input() fase?: string;
   @Output() onAdd = new EventEmitter<string>();
   @Output() onDelete = new EventEmitter<string>();
   @Output() onReset = new EventEmitter<void>();

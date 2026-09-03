@@ -26,6 +26,7 @@ import { SetupComponent } from './components/setup.component';
         </app-tabellone>
 
         <app-azioni
+          [giocatori]="gameInfo?.Giocatori || []"
           [fase]="gameInfo?.Fase"
           [canPlay]="canPlay()"
           [ultimoSpicchio]="ultimoSpicchio"
@@ -35,19 +36,14 @@ import { SetupComponent } from './components/setup.component';
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
           (onSoluzione)="tentaSoluzione($event)"
-          (onStopTimer)="stopAutoSingolaChiamataLoop()"
+          (onStopTimer)="stopAutoSingolaChiamataLoopManuale()"
+          (onPrenota)="prenota($event)"
           (onStartTimer)="startAutoSingolaChiamataLoop()">
         </app-azioni>
 
-        <app-setup
-          [canStart]="canStartGame()"
-          [lastMessage]="lastMessage"
-          (onAvvia)="avviaGame($event)"
-          (onReset)="initGame()">
-        </app-setup>
-
         <app-giocatori
           [giocatori]="gameInfo?.Giocatori || []"
+          [fase]="gameInfo?.Fase"
           (onAdd)="addGiocatore($event)"
           (onDelete)="deleteGiocatore($event)"
           (onReset)="resetGiocatori()">
@@ -57,6 +53,15 @@ import { SetupComponent } from './components/setup.component';
           <h3>Debug Info</h3>
           <pre>{{ gameInfo | json }}</pre>
         </div>
+
+        <app-setup
+          [fase]="gameInfo?.Fase"
+          [canStart]="canStartGame()"
+          [lastMessage]="lastMessage"
+          (onAvvia)="avviaGame($event)"
+          (onReset)="initGame()">
+        </app-setup>
+
       </div>
     </div>
   `,
@@ -93,6 +98,7 @@ export class AppComponent implements OnInit, OnDestroy {
   lastMessage?: { text: string; type: string };
   showDebug = false;
   private autoSingolaChiamataTimer?: ReturnType<typeof setInterval>;
+  private timerStoppatoManualmente = false;
 
   constructor(private gameService: GameService) {}
 
@@ -123,11 +129,16 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private handleTipoManche(): void {
     if (this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' && this.gameInfo?.Fase === 'GIRA') {
-      this.startAutoSingolaChiamataLoop();
+      // Riavvio automatico solo se non è stato stoppato manualmente dall'utente
+      if (!this.timerStoppatoManualmente) {
+        this.startAutoSingolaChiamataLoop();
+      }
       return;
     }
 
     this.stopAutoSingolaChiamataLoop();
+    // Usciti dalla manche, anche un eventuale stop manuale viene dimenticato
+    this.timerStoppatoManualmente = false;
   }
 
   isTimerAttivo(): boolean {
@@ -135,6 +146,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   startAutoSingolaChiamataLoop(): void {
+    this.timerStoppatoManualmente = false;
+
     if (this.autoSingolaChiamataTimer) {
       return;
     }
@@ -157,6 +170,11 @@ export class AppComponent implements OnInit, OnDestroy {
       clearInterval(this.autoSingolaChiamataTimer);
       this.autoSingolaChiamataTimer = undefined;
     }
+  }
+
+  stopAutoSingolaChiamataLoopManuale(): void {
+    this.timerStoppatoManualmente = true;
+    this.stopAutoSingolaChiamataLoop();
   }
 
   canStartGame(): boolean {
@@ -239,6 +257,19 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  prenota(nome: string): void {
+    this.gameService.prenota(nome).subscribe({
+      next: (data) => {
+        this.setGameInfo(data);
+        this.showMessage(`Giocatore ${nome} prenota la soluzione`, 'info');
+      },
+      error: (err) => {
+        this.showMessage(err.error?.message || 'Errore prenotazione giocatore', 'error');
+      }
+    });
+  }
+
 
   resetGiocatori(): void {
     this.gameService.resetGiocatori().subscribe({
@@ -351,7 +382,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (data: CallResponse) => {
         this.setGameInfo(data);
         
-        if (data.RISULTATO) {
+        if (data.ESITO && data.ESITO === 'OK') {
           this.showMessage('🎉 SOLUZIONE CORRETTA! HAI VINTO! 🎉', 'success');
         } else {
           this.showMessage('❌ Soluzione errata!', 'error');
@@ -369,6 +400,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.lastMessage = { text, type };
     setTimeout(() => {
       this.lastMessage = undefined;
-    }, 5000);
+    }, 50000);
   }
 }

@@ -66,6 +66,10 @@ export class GameService {
     return this.http.delete<GameInfo>(`${this.apiUrl}/giocatore/${nome}`);
   }
 
+  prenota(nome: string): Observable<GameInfo> {
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/prenota/${nome}`);
+  }
+
   resetGiocatori(): Observable<GameInfo> {
     return this.http.delete<GameInfo>(`${this.apiUrl}/giocatore`);
   }
