@@ -23,6 +23,7 @@ import { MessaggioComponent } from './components/messaggio.component';
           [tabellone]="getTabellone()"
           [giocatoreTurno]="getGiocatoreTurno()"
           [fase]="gameInfo?.Fase"
+          [valoreCresce]="gameInfo?.ValoreCresce"
           [tipoManche]="gameInfo?.TipoManche"
           [posizione]="gameInfo?.POSIZIONE"
           >
@@ -384,11 +385,15 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (data: CallResponse) => {
         this.setGameInfo(data);
         
-        if (data.ESITO && data.ESITO === 'OK') {
-          this.showMessage('🎉 SOLUZIONE CORRETTA! HAI VINTO! 🎉', 'success');
+        if (data.FINE && data.FINE === 'OK') {
+          this.showMessage('🎉 FINE', 'success');
         } else {
-          this.showMessage('❌ Soluzione errata!', 'error');
+        if (data.ESITO && data.ESITO === 'OK') {
+          this.showMessage('SOLUZIONE CORRETTA', 'success');
+        } else {
+          this.showMessage('Soluzione errata', 'error');
         }
+      }
         
         this.ultimoSpicchio = undefined;
       },

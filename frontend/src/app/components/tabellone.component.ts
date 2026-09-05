@@ -7,7 +7,7 @@ import { Tabellone, Giocatore } from '../models/game.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="tabellone-section">
+    <div class="tabellone-section" *ngIf="fase !== 'FINE'">
       <div class="game-board" *ngIf="tabellone && isTabelloneValid()">
         <div class="category">
           <strong> {{ tabellone.titolo }} </strong>
@@ -54,6 +54,12 @@ import { Tabellone, Giocatore } from '../models/game.model';
             <strong>Tipo Manche:</strong> 
             <span class="tipoManche-badge">
               {{ tipoManche }}
+            </span>
+          </div>
+          <div class="phase-info" *ngIf="valoreCresce">
+            <strong>Valore Cresce:</strong> 
+            <span class="tipoManche-badge">
+              {{ valoreCresce }}
             </span>
           </div>
           <!--
@@ -271,7 +277,7 @@ export class TabelloneComponent {
   @Input() fase?: string;
   @Input() tipoManche?: string;
   @Input() posizione?: number;
-
+  @Input() valoreCresce?: string;
   isTabelloneValid(): boolean {
     return typeof this.tabellone === 'object' && !!this.tabellone.frase;
   }

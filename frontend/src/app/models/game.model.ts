@@ -24,6 +24,7 @@ export interface GameInfo {
   ConsonantiFinite?: string | boolean;
   Tabelloni?: number;
   TipoManche?: string;
+  ValoreCresce?: string;
   POSIZIONE?: number;
   JOLLY_USE?: boolean;
   GARAGE_USE?: boolean;
@@ -41,4 +42,5 @@ export interface CallResponse extends GameInfo {
   LETTERE_GIA_CHIAMATE?: boolean;
   ESAURITE?: boolean;
   ESITO?: string;
+  FINE?: string;
 }

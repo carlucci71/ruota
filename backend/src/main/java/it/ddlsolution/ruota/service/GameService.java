@@ -5,6 +5,7 @@ import it.ddlsolution.ruota.dto.Tabellone;
 import it.ddlsolution.ruota.util.Utility;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ public class GameService {
     private boolean jollyUse;
     private boolean garageUse;
     private boolean raddoppiaUse;
-    private int valoreCresce;
+    List<Manche> manches=new ArrayList<>();
+    private int manchCorrente;
 
     public void incrementaPuntiManche(int punti) {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
@@ -84,7 +86,7 @@ public class GameService {
                 }
             }
             if (spicchio.equals(SpicchiCustom.CRESCE)) {
-                spicchio = valoreCresce;
+                spicchio = manches.get(manchCorrente).valoreCresce;
             }
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
                 if (raddoppiaUse) {
@@ -263,12 +265,20 @@ public class GameService {
         garageUse = false;
         raddoppiaUse = false;
         jollyUse = false;
-        valoreCresce = 1000;
         fase = Fase.SETUP;
         tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
+            giocatore.setPuntiManche(0);
+            giocatore.setWithGarage(false);
+            giocatore.setWithJolly(false);
         }
+        manches=List.of(
+                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA,null),
+                new Manche(TipoManche.STANDARD,1000),
+                new Manche(TipoManche.STANDARD,2000)
+        );
+        manchCorrente=0;
     }
 
     public void nextGiocatore() {
@@ -375,9 +385,10 @@ JOLLY
         ret.put("VocaliFinite", getTabelloneInProgress() == null ? "--" : getTabelloneInProgress().isVocaliFinite());
         ret.put("ConsonantiFinite", getTabelloneInProgress() == null ? "--" : getTabelloneInProgress().isConsonantiFinite());
         ret.put("GiocatoreTurno", getGiocatoreTurno() == null ? "--" : getGiocatoreTurno().getNome());
-        ret.put("Giocatori", getGiocatori());
-        ret.put("Fase", getFase());
-        ret.put("TipoManche", getTipoManche());
+        ret.put("Giocatori", giocatori);
+        ret.put("Fase", fase);
+        ret.put("TipoManche", tipoManche);
+        ret.put("ValoreCresce", manches.get(manchCorrente).valoreCresce);
 //        ret.put("PosLettere", posLettere);
         return ret;
     }
@@ -466,22 +477,28 @@ JOLLY
 
     public Map<String, Object> soluzione(String soluzione) {
         Map ret = new HashMap();
-        System.out.println("tipoManche = " + tipoManche);
-        System.out.println("nomeGiocatorePrenotato = " + nomeGiocatorePrenotato);
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
             giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
             giocatoreCorrente.setPuntiManche(0);
-            valoreCresce = valoreCresce + 1000;
+
             nextGiocatore();
-            tipoManche = TipoManche.STANDARD;
-            avvia(getGiocatoreCorrente().getNome());
+            if (manchCorrente +1 < manches.size()) {
+                manchCorrente++;
+                Manche manche = manches.get(manchCorrente);
+                tipoManche = manche.tipoManche;
+                avvia(getGiocatoreCorrente().getNome());
+                fase = Fase.GIRA;
+            } else {
+                ret.put("FINE", "OK");
+                fase = Fase.FINE;
+            }
         } else {
             ret.put("ESITO", "KO");
             nextGiocatore();
+            fase = Fase.GIRA;
         }
-        fase = Fase.GIRA;
         return ret;
     }
 
@@ -537,13 +554,16 @@ JOLLY
         return ret;
     }
 
-    enum Fase {SETUP, GIRA, PARLA}
+    enum Fase {SETUP, GIRA, PARLA, FINE}
 
     enum TipoManche {AUTO_SINGOLA_CHIAMATA, STANDARD}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 
-    public enum VocaliAmmesse {A, E, I, O, U}
+    public record Manche(TipoManche tipoManche, Integer valoreCresce){};
+
+    public enum VocaliAmmesse {
+        A, E, I, O, U}
 
     public enum ConsonantiAmmesse {B, C, D, F, G, H, L, M, N, P, Q, R, S, T, V, Z, J, K, W, X, Y}
 }
