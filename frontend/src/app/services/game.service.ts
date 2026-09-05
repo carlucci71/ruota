@@ -44,8 +44,9 @@ export class GameService {
     return this.http.get<CallResponse>(`${this.apiUrl}/game/vocale`, { params });
   }
 
-  autoSingolaChiamata(): Observable<GameInfo> {
-    return this.http.get<GameInfo>(`${this.apiUrl}/game/autoSingolaChiamata`);
+  autoSingolaChiamata(nascondi: boolean): Observable<GameInfo> {
+    const params = new HttpParams().set('nascondi', nascondi);
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/autoSingolaChiamata`, { params });
   }
 
   tentaSoluzione(soluzione: string): Observable<CallResponse> {

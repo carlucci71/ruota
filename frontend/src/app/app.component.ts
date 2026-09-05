@@ -36,6 +36,7 @@ import { MessaggioComponent } from './components/messaggio.component';
           [ultimoSpicchio]="ultimoSpicchio"
           [tipoManche]="gameInfo?.TipoManche"
           [timerAttivo]="isTimerAttivo()"
+          [isAutoSingolaChiamata]="isAutoSingolaChiamata()"
           (onGira)="giraRuota()"
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
@@ -130,8 +131,12 @@ export class AppComponent implements OnInit, OnDestroy {
     this.handleTipoManche();
   }
 
+  isAutoSingolaChiamata(): boolean {
+    return this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' || this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+  }
+
   private handleTipoManche(): void {
-    if (this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' && this.gameInfo?.Fase === 'GIRA') {
+    if (this.isAutoSingolaChiamata()  && this.gameInfo?.Fase === 'GIRA') {
       // Riavvio automatico solo se non è stato stoppato manualmente dall'utente
       if (!this.timerStoppatoManualmente) {
         this.startAutoSingolaChiamataLoop();
@@ -156,7 +161,8 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.autoSingolaChiamataTimer = setInterval(() => {
-      this.gameService.autoSingolaChiamata().subscribe({
+      const nascondi = this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+      this.gameService.autoSingolaChiamata(nascondi).subscribe({
         next: (data) => {
           this.setGameInfo(data);
         },

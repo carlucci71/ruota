@@ -12,11 +12,11 @@ import { Giocatore } from '../models/game.model';
       <div class="action-group" *ngIf="canPlay">
         <div class="flex-column">
           <h2  *ngIf="giocatori && giocatori.length > 0 && 
-          fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo">
+          fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
           PRENOTATI PER DARE LA SOLUZIONE
         </h2>
           <div class="players-list" *ngIf="giocatori && giocatori.length > 0 && 
-          fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && timerAttivo">
+          fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
             <span class="player-card" *ngFor="let giocatore of giocatori">
               <button class="btn-danger btn-small" (click)="provaSoluzioneAutoChiamata(giocatore.nome)">
                 {{ giocatore.nome }}
@@ -26,13 +26,13 @@ import { Giocatore } from '../models/game.model';
 
           <button 
             class="btn-primary btn-large" 
-            *ngIf="fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo"
+            *ngIf="fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo"
             (click)="startTimer()">
             ▶️ RIPRENDI TIMER
           </button>
           <span
-            *ngIf="fase === 'GIRA' && tipoManche != 'AUTO_SINGOLA_CHIAMATA'
-            || (fase === 'GIRA' && tipoManche === 'AUTO_SINGOLA_CHIAMATA' && !timerAttivo)"
+            *ngIf="fase === 'GIRA' && !isAutoSingolaChiamata
+            || (fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo)"
           >
 
 
@@ -55,7 +55,7 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
+      <div class="action-group" *ngIf="canPlay && !isAutoSingolaChiamata">
         <h3>Gira la Ruota</h3>
         <div class="flex-row">
           <button 
@@ -71,7 +71,7 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
+      <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && !isAutoSingolaChiamata">
         <h3>Chiama Consonante</h3>
         <div class="flex-row">
           <input 
@@ -89,7 +89,7 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && tipoManche !== 'AUTO_SINGOLA_CHIAMATA'">
+      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && !isAutoSingolaChiamata">
         <h3>Compra Vocale</h3>
         <div class="vowels-grid">
           <button 
@@ -199,6 +199,7 @@ export class AzioniComponent {
   @Input() ultimoSpicchio?: string | number;
   @Input() tipoManche?: string;
   @Input() timerAttivo = false;
+  @Input() isAutoSingolaChiamata = false;
 
   @Output() onGira = new EventEmitter<void>();
   @Output() onConsonante = new EventEmitter<string>();
@@ -224,7 +225,8 @@ export class AzioniComponent {
   }
 
   compraVocale(vocale: string): void {
-    if (confirm(`Vuoi comprare la vocale ${vocale}? (Costa 500 punti)`)) {
+    //if (confirm(`Vuoi comprare la vocale ${vocale}? (Costa 500 punti)`)) 
+      {
       this.onVocale.emit(vocale);
     }
   }

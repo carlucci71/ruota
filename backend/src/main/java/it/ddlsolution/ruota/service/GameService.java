@@ -3,9 +3,10 @@ package it.ddlsolution.ruota.service;
 import it.ddlsolution.ruota.dto.Giocatore;
 import it.ddlsolution.ruota.dto.Tabellone;
 import it.ddlsolution.ruota.util.Utility;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,12 +33,12 @@ public class GameService {
     private String nomeGiocatorePrenotato;
     private List<Tabellone> tabelloni;
     private Fase fase;
-    private TipoManche tipoManche;
     private boolean jollyUse;
     private boolean garageUse;
     private boolean raddoppiaUse;
     List<Manche> manches=new ArrayList<>();
-    private int manchCorrente;
+    private int mancheCorrente;
+    private int contaChiamateNascoste;
 
     public void incrementaPuntiManche(int punti) {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
@@ -46,7 +47,7 @@ public class GameService {
 
     private Giocatore getGiocatoreCorrente() {
         String nome;
-        if (tipoManche==TipoManche.STANDARD) {
+        if (manches.get(mancheCorrente).tipoManche==TipoManche.STANDARD) {
             nome = giocatoreTurno.getNome();
         } else {
             nome = nomeGiocatorePrenotato;
@@ -86,7 +87,7 @@ public class GameService {
                 }
             }
             if (spicchio.equals(SpicchiCustom.CRESCE)) {
-                spicchio = manches.get(manchCorrente).valoreCresce;
+                spicchio = manches.get(mancheCorrente).valoreCresce;
             }
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
                 if (raddoppiaUse) {
@@ -176,17 +177,25 @@ public class GameService {
         return ret;
     }
 
-    public void adaptLetteraPosizione(int posizione) {
+    public void adaptLetteraPosizione(int posizione, boolean nascondi) {
         StringBuffer nuovaFrase = new StringBuffer();
         char[] frase = getTabelloneTurno().getFrase().toCharArray();
-        char[] inProgress = getTabelloneInProgress().getFrase().toCharArray();
+        char[] inProgress = tabelloneInProgress.getFrase().toCharArray();
         for (int i = 0; i < frase.length; i++) {
             char attInProgress = inProgress[i];
             char attChar = frase[i];
             if (attInProgress == PLACEHOLDER && posizione == i) {
                 nuovaFrase.append(attChar);
             } else {
-                nuovaFrase.append(attInProgress);
+                if (nascondi){
+                    if (attChar == ' ' || attChar == '\'') {
+                        nuovaFrase.append(attChar);
+                    } else{
+                        nuovaFrase.append(PLACEHOLDER);
+                    }
+                } else {
+                    nuovaFrase.append(attInProgress);
+                }
             }
         }
         this.tabelloneInProgress = new Tabellone(tabelloneInProgress.getTitolo() + "," + nuovaFrase);
@@ -266,7 +275,6 @@ public class GameService {
         raddoppiaUse = false;
         jollyUse = false;
         fase = Fase.SETUP;
-        tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
             giocatore.setPuntiManche(0);
@@ -278,7 +286,8 @@ public class GameService {
                 new Manche(TipoManche.STANDARD,1000),
                 new Manche(TipoManche.STANDARD,2000)
         );
-        manchCorrente=0;
+        mancheCorrente =0;
+
     }
 
     public void nextGiocatore() {
@@ -365,6 +374,7 @@ JOLLY
         fraseRandom = 0;//TODO frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
+        contaChiamateNascoste=0;
         fase = Fase.GIRA;
     }
 
@@ -387,8 +397,8 @@ JOLLY
         ret.put("GiocatoreTurno", getGiocatoreTurno() == null ? "--" : getGiocatoreTurno().getNome());
         ret.put("Giocatori", giocatori);
         ret.put("Fase", fase);
-        ret.put("TipoManche", tipoManche);
-        ret.put("ValoreCresce", manches.get(manchCorrente).valoreCresce);
+        ret.put("TipoManche", manches.get(mancheCorrente).tipoManche);
+        ret.put("ValoreCresce", manches.get(mancheCorrente).valoreCresce);
 //        ret.put("PosLettere", posLettere);
         return ret;
     }
@@ -484,10 +494,8 @@ JOLLY
             giocatoreCorrente.setPuntiManche(0);
 
             nextGiocatore();
-            if (manchCorrente +1 < manches.size()) {
-                manchCorrente++;
-                Manche manche = manches.get(manchCorrente);
-                tipoManche = manche.tipoManche;
+            if (mancheCorrente +1 < manches.size()) {
+                mancheCorrente++;
                 avvia(getGiocatoreCorrente().getNome());
                 fase = Fase.GIRA;
             } else {
@@ -509,9 +517,19 @@ JOLLY
         return ret;
     }
 
-    public Map<String, Object> autoSingolaChiamata() {
+    public Map<String, Object> autoSingolaChiamata(boolean nascondi) {
+        if (nascondi) {
+            contaChiamateNascoste++;
+        }
+        if (contaChiamateNascoste==5){
+            Manche manche = manches.get(mancheCorrente);
+            manche.tipoManche=TipoManche.AUTO_SINGOLA_CHIAMATA;
+            setTabelloneTurno(tabelloneTurno);
+            contaChiamateNascoste=0;
+
+        }
         Map<String, Object> ret = new HashMap<>();
-        if (posLettere.size() > 0 && fase == Fase.GIRA) {
+        if (posLettere.size() > 0) {
             //casuale da 1 a 20. Se maggiore di 3 vocale altrimenti consonante
             List<Character> caratteri = posLettere.keySet().stream().toList();
             boolean isVocale = true;
@@ -538,7 +556,7 @@ JOLLY
             List<Integer> posizioniLettera = posLettere.get(lettera);
             randomed = utility.randomUntil(posizioniLettera.size()) - 1;
             Integer posizione = posizioniLettera.get(randomed);
-            adaptLetteraPosizione(posizione);
+            adaptLetteraPosizione(posizione, nascondi);
             posizioniLettera.remove(posizione);
             if (posizioniLettera.size() == 0) {
                 posLettere.remove(lettera);
@@ -556,11 +574,16 @@ JOLLY
 
     enum Fase {SETUP, GIRA, PARLA, FINE}
 
-    enum TipoManche {AUTO_SINGOLA_CHIAMATA, STANDARD}
+    enum TipoManche {AUTO_SINGOLA_CHIAMATA,AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
 
-    public record Manche(TipoManche tipoManche, Integer valoreCresce){};
+    @Data
+    @AllArgsConstructor
+    static class Manche{
+        TipoManche tipoManche;
+        Integer valoreCresce;
+    };
 
     public enum VocaliAmmesse {
         A, E, I, O, U}

@@ -81,8 +81,8 @@ public class GameController {
     }
 
     @GetMapping("/autoSingolaChiamata")
-    public ResponseEntity<Map<String, Object>> autoSingolaChiamata() {
-        Map<String, Object> autoSingolaChiamata = gameService.autoSingolaChiamata();
+    public ResponseEntity<Map<String, Object>> autoSingolaChiamata(@RequestParam boolean nascondi) {
+        Map<String, Object> autoSingolaChiamata = gameService.autoSingolaChiamata(nascondi);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(autoSingolaChiamata);
         return ResponseEntity.ok(ret);
