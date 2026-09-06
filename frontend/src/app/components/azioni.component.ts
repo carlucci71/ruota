@@ -73,21 +73,7 @@ import { Giocatore } from '../models/game.model';
 
       <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && !isAutoSingolaChiamata">
         <h3>Chiama Consonante</h3>
-        <div class="flex-row">
-          <!--
-          <input 
-            type="text" 
-            [(ngModel)]="consonante" 
-            placeholder="Consonante"
-            maxlength="1"
-            (input)="consonante = consonante.toUpperCase()">
-          <button 
-            class="btn-primary" 
-            (click)="chiamaConsonante()"
-            [disabled]="!consonante || !isConsonante(consonante)">
-            📢 Chiama Consonante
-          </button>
--->
+        <div class="vowels-grid">
           <button 
             *ngFor="let c of consonanti"
             class="btn-warning vowel-btn" 
@@ -160,7 +146,7 @@ import { Giocatore } from '../models/game.model';
 
     .vowels-grid {
       display: grid;
-      grid-template-columns: repeat(15, 1fr);
+      grid-template-columns: repeat(21, 1fr);
       gap: 8px;
     }
 
@@ -217,7 +203,6 @@ export class AzioniComponent {
   @Output() onStartTimer = new EventEmitter<void>();
   @Output() onPrenota = new EventEmitter<string>();
 
-  consonante = '';
   soluzione = '';
   vocali = ['A', 'E', 'I', 'O', 'U'];
   consonanti = ['B', 'C', 'D', 'F', 'G', 'H', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'Z', 'J', 'K', 'W', 'X', 'Y'];
@@ -263,8 +248,4 @@ export class AzioniComponent {
       this.onPrenota.emit(nome);
   }
 
-  isConsonante(char: string): boolean {
-    const consonanti = 'BCDFGHLMNPQRSTVWXYZ';
-    return consonanti.includes(char.toUpperCase());
-  }
 }
