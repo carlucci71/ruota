@@ -362,11 +362,9 @@ public class GameService {
              */
 
         manches = List.of(
-/*                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
+                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
                 new Manche(TipoManche.STANDARD, 1000, null, false, false),
                 new Manche(TipoManche.STANDARD, 2000, null, false, false),
-
- */
                 new Manche(TipoManche.STANDARD, 3000, null, true, false),
                 new Manche(TipoManche.STANDARD, 4000, null, false, false),
                 new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
