@@ -36,24 +36,38 @@ public class GameService {
     private boolean jollyUse;
     private boolean garageUse;
     private boolean raddoppiaUse;
-    List<Manche> manches=new ArrayList<>();
+    private int contaCiakUse;
+    private int contaPopcornUse;
+    private List<Integer> posizioniCinema;
+    List<Manche> manches = new ArrayList<>();
     private int mancheCorrente;
     private int contaChiamateNascoste;
 
-    public void incrementaPuntiManche(int punti) {
-        Giocatore giocatoreCorrente = getGiocatoreCorrente();
-        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() + punti);
-    }
-
     private Giocatore getGiocatoreCorrente() {
         String nome;
-        if (manches.get(mancheCorrente).tipoManche==TipoManche.STANDARD) {
+        if (manches.get(mancheCorrente).tipoManche == TipoManche.STANDARD) {
             nome = giocatoreTurno.getNome();
         } else {
             nome = nomeGiocatorePrenotato;
         }
         Giocatore giocatoreCorrente = giocatori.stream().filter(g -> g.getNome().equalsIgnoreCase(nome)).findFirst().orElseThrow(() -> new RuntimeException("Giocatore da modificare non trovato: " + nome));
         return giocatoreCorrente;
+    }
+
+    public void incrementaPuntiManche(int punti) {
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() + punti);
+    }
+
+    public void distribuisciPuntiManche() {
+        Giocatore giocatoreCorrente = getGiocatoreCorrente();
+        int puntiMancheProCapite = giocatoreCorrente.getPuntiManche() / (giocatori.size() - 1);
+        giocatoreCorrente.setPuntiManche(0);
+        for (Giocatore giocatore : giocatori) {
+            if (!giocatore.getNome().equalsIgnoreCase(giocatoreCorrente.getNome())) {
+                giocatore.setPuntiManche(puntiMancheProCapite + giocatore.getPuntiManche());
+            }
+        }
     }
 
 
@@ -69,15 +83,28 @@ public class GameService {
         fase = Fase.GIRA;
     }
 
+    public List<Object> ruotaBase() {
+        return List.of(
+                SpicchiCustom.PASSA, 500, SpicchiCustom.GARAGE, 600, 200, 800
+                , SpicchiCustom.TRIPLO, 300, 500, 100, 400, 800
+                , SpicchiCustom.PASSA, 600, 300, 700, 200, SpicchiCustom.CRESCE
+                , SpicchiCustom.BANCAROTTA, 500, SpicchiCustom.JOLLY, 700, 200, 400
+        );
+    }
+
     public Object gira(String forzato) {
         if (fase != Fase.GIRA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase GIRA, ora sei in fase: " + fase.name());
         }
         List<Object> ruotaBase = ruotaBase();
         List<Object> ruota = new ArrayList<>();
-        for (Object spicchio : ruotaBase) {
+        for (int i = 0; i < ruotaBase.size(); i++) {
+            Object spicchio = ruotaBase.get(i);
+            if (posizioniCinema != null && posizioniCinema.contains(i)) {
+                spicchio = SpicchiCustom.CINEMA;
+            }
             if (spicchio.equals(SpicchiCustom.GARAGE)) {
-                if (garageUse) {
+                if (garageUse || manches.get(mancheCorrente).ultimo) {
                     spicchio = 500;
                 }
             }
@@ -113,6 +140,30 @@ public class GameService {
         if (ottenuto.equals(SpicchiCustom.PASSA)) {
             nextGiocatore();
         }
+        if (ottenuto.equals(SpicchiCustom.CINEMA)) {
+            int ciak = 2 - contaCiakUse;
+            int popCorn = 1 - contaPopcornUse;
+            int randomed = utility.randomUntil(ciak + popCorn);
+            if (randomed > contaCiakUse) {
+                ottenuto = SpicchiCustom.CIAK;
+                contaCiakUse++;
+            } else {
+                ottenuto = SpicchiCustom.POPCORN;
+                contaPopcornUse++;
+            }
+            if (posizioniCinema.isEmpty()) {
+                posizioniCinema = new ArrayList<>();
+            } else {
+                posizioniCinema = new ArrayList<>(posizioniCinema.subList(1, posizioniCinema.size()));
+            }
+            fase = Fase.GIRA;
+        }
+        if (ottenuto.equals(SpicchiCustom.CIAK)) {
+            incrementaPuntiManche(5000);
+        }
+        if (ottenuto.equals(SpicchiCustom.POPCORN)) {
+            distribuisciPuntiManche();
+        }
         if (ottenuto.equals(SpicchiCustom.BANCAROTTA)) {
             bancarotta();
         }
@@ -123,6 +174,9 @@ public class GameService {
             garageUse = true;
         }
         if (ottenuto.equals(SpicchiCustom.RADDOPPIA)) {
+            raddoppiaUse = true;
+        }
+        if (ottenuto.equals(SpicchiCustom.CINEMA)) {
             raddoppiaUse = true;
         }
         return ottenuto;
@@ -187,10 +241,10 @@ public class GameService {
             if (attInProgress == PLACEHOLDER && posizione == i) {
                 nuovaFrase.append(attChar);
             } else {
-                if (nascondi){
+                if (nascondi) {
                     if (attChar == ' ' || attChar == '\'') {
                         nuovaFrase.append(attChar);
-                    } else{
+                    } else {
                         nuovaFrase.append(PLACEHOLDER);
                     }
                 } else {
@@ -281,12 +335,46 @@ public class GameService {
             giocatore.setWithGarage(false);
             giocatore.setWithJolly(false);
         }
-        manches=List.of(
-                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA,null),
-                new Manche(TipoManche.STANDARD,1000),
-                new Manche(TipoManche.STANDARD,2000)
+            /*
+            Piatti Estivi
+            AUTO_SINGOLA_CHIAMATA
+
+            In fondo al mar
+            1000
+
+            Tormentoni
+            2000
+
+            Ciak, si gira
+            3000
+            Include i Ciak con la stella (da 5.000 € l’uno) e il temuto Ciak con i popcorn
+
+            Compiti per le vacanze
+            4000
+
+            Triplete
+            AUTO_SINGOLA_CHIAMATA
+            AUTO_SINGOLA_CHIAMATA
+            AUTO_SINGOLA_CHIAMATA_NASCONDI
+
+            Ultimo Round
+            5000
+             */
+
+        manches = List.of(
+/*                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
+                new Manche(TipoManche.STANDARD, 1000, null, false, false),
+                new Manche(TipoManche.STANDARD, 2000, null, false, false),
+
+ */
+                new Manche(TipoManche.STANDARD, 3000, null, true, false),
+                new Manche(TipoManche.STANDARD, 4000, null, false, false),
+                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
+                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false, false),
+                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false, false),
+                new Manche(TipoManche.STANDARD, 5000, null, false, true)
         );
-        mancheCorrente =0;
+        mancheCorrente = 0;
 
     }
 
@@ -311,37 +399,6 @@ public class GameService {
     public void garageGiocatore() {
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
         giocatoreCorrente.setWithGarage(true);
-    }
-
-    public List<Object> ruotaBase() {
-        /*
-        garage --> ?
-        triplo --> bancarotta
-        1000 (cresce)
-        jolly (100)
-
-PASSA x2
-GARAGE
-TRIPLO
-CRESCE
-BANCAROTTA
-JOLLY
-100
-200 x3
-300 x2
-400 x2
-500 x3
-600 x2
-700 x2
-800 x2
-
-         */
-        return List.of(
-                SpicchiCustom.PASSA, 500, SpicchiCustom.GARAGE, 600, 200, 800,
-                SpicchiCustom.TRIPLO, 300, 500, 100, 400, 800,
-                SpicchiCustom.PASSA, 600, 300, 700, 200, SpicchiCustom.CRESCE,
-                SpicchiCustom.BANCAROTTA, 500, SpicchiCustom.JOLLY, 700, 200, 400
-        );
     }
 
     public void update(String nuovoNome, String nome) {
@@ -374,8 +431,35 @@ JOLLY
         fraseRandom = 0;//TODO frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
-        contaChiamateNascoste=0;
+        contaChiamateNascoste = 0;
         fase = Fase.GIRA;
+        if (manches.get(mancheCorrente).isCinema) {
+            contaCiakUse = 0;
+            contaPopcornUse = 0;
+            posizioniCinema = List.of(10, 18, 21);
+            /*
+700
+Ciak
+400
+Passa
+500
+300
+600
+200
+800
+Bancarotta
+
+
+3000
+Ciak
+
+500
+100
+Ciak
+800
+Passa
+             */
+        }
     }
 
     public List<Tabellone> getTabelloni() {
@@ -494,7 +578,7 @@ JOLLY
             giocatoreCorrente.setPuntiManche(0);
 
             nextGiocatore();
-            if (mancheCorrente +1 < manches.size()) {
+            if (mancheCorrente + 1 < manches.size()) {
                 mancheCorrente++;
                 avvia(getGiocatoreCorrente().getNome());
                 fase = Fase.GIRA;
@@ -512,7 +596,7 @@ JOLLY
 
     public Map<String, Object> prenota(String nome) {
         Map<String, Object> ret = new HashMap<>();
-        this.nomeGiocatorePrenotato=nome;
+        this.nomeGiocatorePrenotato = nome;
         ret.put("Prenota", nome);
         return ret;
     }
@@ -521,11 +605,11 @@ JOLLY
         if (nascondi) {
             contaChiamateNascoste++;
         }
-        if (contaChiamateNascoste==5){
+        if (contaChiamateNascoste == 5) {
             Manche manche = manches.get(mancheCorrente);
-            manche.tipoManche=TipoManche.AUTO_SINGOLA_CHIAMATA;
+            manche.tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
             setTabelloneTurno(tabelloneTurno);
-            contaChiamateNascoste=0;
+            contaChiamateNascoste = 0;
 
         }
         Map<String, Object> ret = new HashMap<>();
@@ -574,19 +658,25 @@ JOLLY
 
     enum Fase {SETUP, GIRA, PARLA, FINE}
 
-    enum TipoManche {AUTO_SINGOLA_CHIAMATA,AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD}
+    enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD}
 
-    public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA}
+    public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 
     @Data
     @AllArgsConstructor
-    static class Manche{
+    static class Manche {
         TipoManche tipoManche;
         Integer valoreCresce;
-    };
+        Integer mancheTriplete;
+        Boolean isCinema;
+        Boolean ultimo;
+    }
+
+    ;
 
     public enum VocaliAmmesse {
-        A, E, I, O, U}
+        A, E, I, O, U
+    }
 
     public enum ConsonantiAmmesse {B, C, D, F, G, H, L, M, N, P, Q, R, S, T, V, Z, J, K, W, X, Y}
 }

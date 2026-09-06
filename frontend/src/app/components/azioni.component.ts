@@ -74,6 +74,7 @@ import { Giocatore } from '../models/game.model';
       <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && !isAutoSingolaChiamata">
         <h3>Chiama Consonante</h3>
         <div class="flex-row">
+          <!--
           <input 
             type="text" 
             [(ngModel)]="consonante" 
@@ -85,6 +86,13 @@ import { Giocatore } from '../models/game.model';
             (click)="chiamaConsonante()"
             [disabled]="!consonante || !isConsonante(consonante)">
             📢 Chiama Consonante
+          </button>
+-->
+          <button 
+            *ngFor="let c of consonanti"
+            class="btn-warning vowel-btn" 
+            (click)="chiamaConsonante(c)">
+            {{ c }}
           </button>
         </div>
       </div>
@@ -212,16 +220,20 @@ export class AzioniComponent {
   consonante = '';
   soluzione = '';
   vocali = ['A', 'E', 'I', 'O', 'U'];
+  consonanti = ['B', 'C', 'D', 'F', 'G', 'H', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'Z', 'J', 'K', 'W', 'X', 'Y'];
 
   gira(): void {
     this.onGira.emit();
   }
 
-  chiamaConsonante(): void {
+  chiamaConsonante(consonante: string): void {
+    /*
     if (this.consonante && this.isConsonante(this.consonante)) {
       this.onConsonante.emit(this.consonante);
       this.consonante = '';
     }
+      */
+      this.onConsonante.emit(consonante);
   }
 
   compraVocale(vocale: string): void {

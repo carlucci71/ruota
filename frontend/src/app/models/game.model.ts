@@ -38,9 +38,8 @@ export interface SpinResponse extends GameInfo {
 }
 
 export interface CallResponse extends GameInfo {
-  LETTERE_TROVATE?: number;
-  LETTERE_GIA_CHIAMATE?: boolean;
-  ESAURITE?: boolean;
   ESITO?: string;
   FINE?: string;
+  TROVATE?: string;
+  PUNTI?: string;
 }

@@ -340,18 +340,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.gameService.chiamaConsonante(consonante, this.ultimoSpicchio).subscribe({
       next: (data: CallResponse) => {
         this.setGameInfo(data);
-        
-        if (data.LETTERE_GIA_CHIAMATE) {
-          this.showMessage(`La lettera ${consonante} è già stata chiamata!`, 'error');
-        } else if (data.ESAURITE) {
-          this.showMessage('Consonanti esaurite!', 'error');
-        } else if (data.LETTERE_TROVATE !== undefined) {
-          if (data.LETTERE_TROVATE > 0) {
-            this.showMessage(`Trovate ${data.LETTERE_TROVATE} ${consonante}!`, 'success');
-          } else {
-            this.showMessage(`Nessuna ${consonante} trovata`, 'error');
-          }
+        let ret = 'Trovate ' + data.TROVATE + ' ' + consonante + '.';
+        if (data.PUNTI){
+          ret = ret + ' Punti '+data.PUNTI;
         }
+        this.showMessage(ret, 'success');
         
         this.ultimoSpicchio = undefined;
       },
@@ -366,18 +359,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (data: CallResponse) => {
         this.setGameInfo(data);
         
-        if (data.LETTERE_GIA_CHIAMATE) {
-          this.showMessage(`La vocale ${vocale} è già stata chiamata!`, 'error');
-        } else if (data.ESAURITE) {
-          this.showMessage('Vocali esaurite!', 'error');
-        } else if (data.LETTERE_TROVATE !== undefined) {
-          if (data.LETTERE_TROVATE > 0) {
-            this.showMessage(`Trovate ${data.LETTERE_TROVATE} ${vocale}!`, 'success');
-          } else {
-            this.showMessage(`Nessuna ${vocale} trovata`, 'error');
-          }
-        }
-        
+        this.showMessage(`Trovate ${data.TROVATE} ${vocale}.`, 'success');
         this.ultimoSpicchio = undefined;
       },
       error: (err) => {
