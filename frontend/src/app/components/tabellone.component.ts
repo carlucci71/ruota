@@ -38,13 +38,15 @@ import { Tabellone, Giocatore } from '../models/game.model';
 
       <div class="current-player" *ngIf="giocatoreTurno">
         <div class="player-info-row">
-          <div class="turn-info">
+          <div class="turn-info" *ngIf="!isAutoSingolaChiamata">
             🎯 <strong>Turno:</strong> <span class="player-name">{{ giocatoreTurno.nome }}</span>
           </div>
+          <!--
           <div class="points-info">
             💰 <strong>Punti:</strong> {{ giocatoreTurno.puntiManche }}
           </div>
-          <div class="phase-info" *ngIf="fase">
+          -->
+          <div class="phase-info" *ngIf="fase && !isAutoSingolaChiamata">
             <strong>Fase:</strong> 
             <span class="phase-badge" [ngClass]="'phase-' + fase.toLowerCase()">
               {{ fase }}
@@ -53,7 +55,13 @@ import { Tabellone, Giocatore } from '../models/game.model';
           <div class="phase-info" *ngIf="tipoManche">
             <strong>Tipo Manche:</strong> 
             <span class="tipoManche-badge">
-              {{ tipoManche }}
+              {{ categoriaManche }} - {{ tipoManche }}
+            </span>
+          </div>
+          <div class="phase-info" *ngIf="giocatorePrenotato">
+            <strong>Giocatore prenotato:</strong> 
+            <span class="tipoManche-badge">
+              {{giocatorePrenotato}}
             </span>
           </div>
           <div class="phase-info" *ngIf="valoreCresce">
@@ -70,9 +78,8 @@ import { Tabellone, Giocatore } from '../models/game.model';
             </span>
           </div>
           -->
-          <div class="specials-info" *ngIf="giocatoreTurno.withJolly || giocatoreTurno.withGarage">
+          <div class="specials-info" *ngIf="giocatoreTurno.withJolly">
             <span *ngIf="giocatoreTurno.withJolly" class="special">🃏 JOLLY</span>
-            <span *ngIf="giocatoreTurno.withGarage" class="special">🚗 GARAGE</span>
           </div>
         </div>
       </div>
@@ -276,8 +283,11 @@ export class TabelloneComponent {
   @Input() giocatoreTurno?: Giocatore;
   @Input() fase?: string;
   @Input() tipoManche?: string;
+  @Input() categoriaManche?: string;
+  @Input() giocatorePrenotato?: string;
   @Input() posizione?: number;
   @Input() valoreCresce?: string;
+  @Input() isAutoSingolaChiamata = false;
   isTabelloneValid(): boolean {
     return typeof this.tabellone === 'object' && !!this.tabellone.frase;
   }

@@ -23,8 +23,11 @@ import { MessaggioComponent } from './components/messaggio.component';
           [tabellone]="getTabellone()"
           [giocatoreTurno]="getGiocatoreTurno()"
           [fase]="gameInfo?.Fase"
+          [isAutoSingolaChiamata]="isAutoSingolaChiamata()"
           [valoreCresce]="gameInfo?.ValoreCresce"
           [tipoManche]="gameInfo?.TipoManche"
+          [categoriaManche]="gameInfo?.CategoriaManche"
+          [giocatorePrenotato]="gameInfo?.GiocatorePrenotato"
           [posizione]="gameInfo?.POSIZIONE"
           >
         </app-tabellone>

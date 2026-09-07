@@ -24,6 +24,8 @@ export interface GameInfo {
   ConsonantiFinite?: string | boolean;
   Tabelloni?: number;
   TipoManche?: string;
+  CategoriaManche?: string;
+  GiocatorePrenotato?: string;
   ValoreCresce?: string;
   POSIZIONE?: number;
   JOLLY_USE?: boolean;
