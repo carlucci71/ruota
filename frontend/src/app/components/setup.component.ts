@@ -10,12 +10,14 @@ import { FormsModule } from '@angular/forms';
     <div class="setup-section">
       <div class="action-group">
         <div class="flex-row">
+          <!--
           <input 
             *ngIf="fase === 'SETUP'"
             type="text" 
             [(ngModel)]="nomePerAvvio" 
             placeholder="Nome giocatore iniziale (opzionale)"
             [disabled]="!canStart">
+-->
           <button 
             *ngIf="fase === 'SETUP'"
             class="btn-success" 

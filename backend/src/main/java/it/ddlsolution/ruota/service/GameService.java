@@ -323,6 +323,7 @@ public class GameService {
     public void resetGiocatori() {
         giocatori = new LinkedHashSet<>();
         addGiocatori("GIMMI");
+        addGiocatori("BUBU");
     }
 
     public void reset() {
@@ -367,17 +368,14 @@ public class GameService {
              */
 
         manches = List.of(
-                //new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
+                new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
                 new Manche(CategoriaManche.IN_FONDO_AL_MAR, TipoManche.STANDARD, 1000, null, false, false),
-                /*
                 new Manche(CategoriaManche.TORMENTONI,TipoManche.STANDARD, 2000, null, false, false),
                 new Manche(CategoriaManche.CIAK_SI_GIRA,TipoManche.STANDARD, 3000, null, true, false),
                 new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE,TipoManche.STANDARD, 4000, null, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false, false),
-
-                 */
                 new Manche(CategoriaManche.ULTIMO_TURNO, TipoManche.STANDARD, 5000, null, false, true)
         );
         mancheCorrente = 0;
