@@ -33,6 +33,7 @@ public class GameService {
     private String nomeGiocatorePrenotato;
     private List<Tabellone> tabelloni;
     private Fase fase;
+    private Integer valoreUltimoGiro;
     private boolean jollyUse;
     private boolean garageUse;
     private boolean raddoppiaUse;
@@ -417,6 +418,33 @@ public class GameService {
         }
     }
 
+    private boolean campanellaUltimoGiro(){
+        int x = 10;//1 su x non suona
+        int random = utility.randomUntil(x);
+        if (random<x){
+            return true;
+        } else {
+            return  false;
+        }
+    }
+
+    private void sceltaUltimoGiro(){
+            if (campanellaUltimoGiro()){
+                Object gira;
+                do{
+                    gira = gira(null);
+                }while (gira == SpicchiCustom.PASSA
+                        || gira == SpicchiCustom.GARAGE
+                        || gira == SpicchiCustom.TRIPLO
+                        || gira == SpicchiCustom.BANCAROTTA
+                );
+                valoreUltimoGiro=Integer.valueOf(gira.toString());
+                Manche manche = manches.get(mancheCorrente);
+                manche.tipoManche = TipoManche.DOPO_CAMPANELLA;
+                fase = Fase.PARLA;
+            }
+    }
+
     public void avvia(String nomeGiocatoreAvvia) {
         Giocatore giocatore;
         if (nomeGiocatoreAvvia == null) {
@@ -431,6 +459,9 @@ public class GameService {
         setTabelloneTurno(tabellone);
         contaChiamateNascoste = 0;
         fase = Fase.GIRA;
+        if (manches.get(mancheCorrente).ultimo) {
+            sceltaUltimoGiro();
+        }
         if (manches.get(mancheCorrente).isCinema) {
             contaCiakUse = 0;
             contaPopcornUse = 0;
@@ -603,7 +634,7 @@ Passa
         if (nascondi) {
             contaChiamateNascoste++;
         }
-        if (contaChiamateNascoste == 5) {
+        if (contaChiamateNascoste == 10) {
             Manche manche = manches.get(mancheCorrente);
             manche.tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
             setTabelloneTurno(tabelloneTurno);
@@ -656,7 +687,7 @@ Passa
 
     enum Fase {SETUP, GIRA, PARLA, FINE}
 
-    enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD}
+    enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD, DOPO_CAMPANELLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 
