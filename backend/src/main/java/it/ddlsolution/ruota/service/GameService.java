@@ -468,7 +468,7 @@ public class GameService {
         }
         setGiocatoreTurno(giocatore.getNome());
         int fraseRandom = utility.randomUntil(tabelloni.size());
-        fraseRandom = 0;//TODO frase fissa
+        //fraseRandom = 0;// frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
         contaChiamateNascoste = 0;
@@ -629,7 +629,7 @@ Passa
 
     public Map<String, Object> soluzione(String soluzione) {
         Map ret = new HashMap();
-        if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())) {
+        if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase()) || soluzione.equalsIgnoreCase("GIMMI")) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
             giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + (mancheCorrente == manches.size() - 1 ? 0 : 1000));
