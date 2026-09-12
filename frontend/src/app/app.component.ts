@@ -382,7 +382,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.setGameInfo(data);
         this.ultimoSpicchio = undefined;
-        this.showMessage('Gioco resettato completamente', 'info');
+        this.showMessage('Gioco resettato', 'info');
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore reset gioco', 'error');

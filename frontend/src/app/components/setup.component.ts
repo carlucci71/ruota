@@ -28,7 +28,7 @@ import { FormsModule } from '@angular/forms';
           <button 
             class="btn-danger" 
             (click)="reset()">
-            🔄 Reset Completo
+            🔄 Reset
           </button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export class SetupComponent {
   }
 
   reset(): void {
-    if (confirm('Vuoi resettare completamente il gioco?')) {
+    if (confirm('Vuoi resettare il gioco?')) {
       this.onReset.emit();
     }
   }

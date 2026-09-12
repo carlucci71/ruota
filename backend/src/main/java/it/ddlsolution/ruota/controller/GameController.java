@@ -31,7 +31,7 @@ public class GameController {
 
     @DeleteMapping
     public ResponseEntity<Map<String, Object>> init() {
-        gameService.resetGiocatori();
+        //gameService.resetGiocatori();
         gameService.reset();
         return ResponseEntity.ok(gameService.buildInfo());
     }
