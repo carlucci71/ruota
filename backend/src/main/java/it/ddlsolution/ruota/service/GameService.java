@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeMap;
 
 @Service
 @Getter
@@ -434,7 +435,7 @@ public class GameService {
     }
 
     private boolean campanellaUltimoGiro() {
-        int x = 2;//1 su x non suona
+        int x = 10;//1 su x non suona
         int random = utility.randomUntil(x);
         if (random < x) {
             return true;
@@ -771,4 +772,5 @@ Passa
     }
 
     public enum ConsonantiAmmesse {B, C, D, F, G, H, L, M, N, P, Q, R, S, T, V, Z, J, K, W, X, Y}
+
 }
