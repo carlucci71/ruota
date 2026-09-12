@@ -101,7 +101,7 @@ public class GameService {
         List<Object> ruota = new ArrayList<>();
         for (int i = 0; i < ruotaBase.size(); i++) {
             Object spicchio = ruotaBase.get(i);
-            if (posizioniCinema != null && posizioniCinema.contains(i)) {
+            if (manches.get(mancheCorrente).isCinema && posizioniCinema != null && posizioniCinema.contains(i)) {
                 spicchio = SpicchiCustom.CINEMA;
             }
             if (spicchio.equals(SpicchiCustom.GARAGE)) {
@@ -363,15 +363,15 @@ public class GameService {
              */
 
         manches = List.of(
-                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
-                new Manche(TipoManche.STANDARD, 1000, null, false, false),
-                new Manche(TipoManche.STANDARD, 2000, null, false, false),
-                new Manche(TipoManche.STANDARD, 3000, null, true, false),
-                new Manche(TipoManche.STANDARD, 4000, null, false, false),
-                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
-                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false, false),
-                new Manche(TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false, false),
-                new Manche(TipoManche.STANDARD, 5000, null, false, true)
+                new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
+                new Manche(CategoriaManche.IN_FONDO_AL_MAR,TipoManche.STANDARD, 1000, null, false, false),
+                new Manche(CategoriaManche.TORMENTONI,TipoManche.STANDARD, 2000, null, false, false),
+                new Manche(CategoriaManche.CIAK_SI_GIRA,TipoManche.STANDARD, 3000, null, true, false),
+                new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE,TipoManche.STANDARD, 4000, null, false, false),
+                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
+                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false, false),
+                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false, false),
+                new Manche(CategoriaManche.ULTIMO_TURNO,TipoManche.STANDARD, 5000, null, false, true)
         );
         mancheCorrente = 0;
 
@@ -382,6 +382,15 @@ public class GameService {
         int idx = list.indexOf(giocatoreTurno);
         if (idx == -1) throw new NoSuchElementException();
         giocatoreTurno = list.get((idx + 1) % list.size());
+        fase = Fase.GIRA;
+    }
+
+    public void nextGiocatore(String nome) {
+        for (Giocatore giocatore : giocatori) {
+            if (giocatore.getNome().equalsIgnoreCase(nome)){
+                giocatoreTurno=giocatore;
+            }
+        }
         fase = Fase.GIRA;
     }
 
@@ -511,6 +520,7 @@ Passa
         ret.put("Giocatori", giocatori);
         ret.put("Fase", fase);
         ret.put("TipoManche", manches.get(mancheCorrente).tipoManche);
+        ret.put("CategoriaManche", manches.get(mancheCorrente).categoriaManche);
         ret.put("ValoreCresce", manches.get(mancheCorrente).valoreCresce);
 //        ret.put("PosLettere", posLettere);
         return ret;
@@ -606,7 +616,11 @@ Passa
             giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
             giocatoreCorrente.setPuntiManche(0);
 
-            nextGiocatore();
+            if (mancheCorrente==0) {
+                nextGiocatore(giocatoreCorrente.getNome());
+            } else {
+                nextGiocatore();
+            }
             if (mancheCorrente + 1 < manches.size()) {
                 mancheCorrente++;
                 avvia(getGiocatoreCorrente().getNome());
@@ -626,7 +640,7 @@ Passa
     public Map<String, Object> prenota(String nome) {
         Map<String, Object> ret = new HashMap<>();
         this.nomeGiocatorePrenotato = nome;
-        ret.put("Prenota", nome);
+        ret.put("GiocatorePrenotato", nome);
         return ret;
     }
 
@@ -691,17 +705,18 @@ Passa
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 
+    public enum CategoriaManche {PIATTI_ESTIVI, TRIPLETE, ULTIMO_TURNO, CIAK_SI_GIRA, TORMENTONI, IN_FONDO_AL_MAR, COMPITI_PER_LE_VACANZE, }
+
     @Data
     @AllArgsConstructor
     static class Manche {
+        CategoriaManche categoriaManche;
         TipoManche tipoManche;
         Integer valoreCresce;
         Integer mancheTriplete;
         Boolean isCinema;
         Boolean ultimo;
     }
-
-    ;
 
     public enum VocaliAmmesse {
         A, E, I, O, U

@@ -232,6 +232,7 @@ export class AzioniComponent {
     if (this.soluzione) {
       this.onSoluzione.emit(this.soluzione);
       this.soluzione = '';
+      this.startTimer();
     }
   }
 
