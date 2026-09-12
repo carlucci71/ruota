@@ -7,7 +7,7 @@ import { GameInfo, SpinResponse, CallResponse } from '../models/game.model';
   providedIn: 'root'
 })
 export class GameService {
-  private apiUrl = 'http://localhost:8083/api/ruota';
+  private apiUrl = '/api/ruota';
 
   constructor(private http: HttpClient) {}
 
