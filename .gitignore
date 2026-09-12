@@ -1,2 +1,6 @@
 backend/.idea/
 backend/target/
+backend/err.log
+backend/log.log
+frontend/nohup.out
+
