@@ -468,7 +468,7 @@ public class GameService {
         }
         setGiocatoreTurno(giocatore.getNome());
         int fraseRandom = utility.randomUntil(tabelloni.size());
-        //fraseRandom = 0;//TODO frase fissa
+        fraseRandom = 0;//TODO frase fissa
         Tabellone tabellone = tabelloni.get(fraseRandom);
         setTabelloneTurno(tabellone);
         contaChiamateNascoste = 0;

@@ -8,6 +8,12 @@ import { AzioniComponent } from './components/azioni.component';
 import { SetupComponent } from './components/setup.component';
 import { MessaggioComponent } from './components/messaggio.component';
 
+/** Intervallo (in ms) tra una chiamata automatica e l'altra nella manche AUTO_SINGOLA_CHIAMATA */
+const AUTO_SINGOLA_CHIAMATA_INTERVALO_MS = 2000;
+
+/** Durata (in secondi) del countdown nella fase TENTA prima del passaggio automatico del turno */
+const TENTA_COUNTDOWN_SECONDI = 3;
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -183,7 +189,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.showMessage('Errore chiamata automatica', 'error');
         }
       });
-    }, 3000);
+    }, AUTO_SINGOLA_CHIAMATA_INTERVALO_MS);
   }
 
   stopAutoSingolaChiamataLoop(): void {
@@ -209,9 +215,9 @@ export class AppComponent implements OnInit, OnDestroy {
         return;
       }
       this.tentaTimerAttivo = true;
-      this.tentaCountdown = 3;
+      this.tentaCountdown = TENTA_COUNTDOWN_SECONDI;
       this.tentaTimer = setInterval(() => {
-        this.tentaCountdown = (this.tentaCountdown ?? 3) - 1;
+        this.tentaCountdown = (this.tentaCountdown ?? TENTA_COUNTDOWN_SECONDI) - 1;
         if (this.tentaCountdown <= 0) {
           this.tentaTimerAttivo = false;
           this.tentaCountdown = 0;
