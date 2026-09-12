@@ -34,8 +34,11 @@ Dall'altro PC apri nel browser: `http://<IP-DEL-PC-SERVER>:4800` (es. `http://19
 Per scoprire l'IP del server: `ipconfig getifaddr en0` (macOS) o `ipconfig` (Windows).
 
 > Le chiamate al backend (`/api`) vengono inoltrate automaticamente dal proxy di sviluppo
-> (`proxy.conf.json`) a `http://localhost:8083` **sul PC che esegue `ng serve`**,
+> (`proxy.conf.js`) a `http://localhost:8083` **sul PC che esegue `ng serve`**,
 > quindi il backend deve essere avviato solo sul PC server.
+> Il proxy rimuove anche l'header `Origin` del browser, evitando l'errore
+> `Invalid CORS request` del backend anche quando il frontend è aperto
+> da un altro PC / da un IP pubblico (es. `http://85.235.148.177:4800`).
 
 ## Funzionalità
 
