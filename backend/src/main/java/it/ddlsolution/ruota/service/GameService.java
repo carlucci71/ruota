@@ -638,7 +638,7 @@ Passa
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase())) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
-            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
+            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + (manches.get(mancheCorrente).ultimo ? 0 : 1000));
             giocatoreCorrente.setPuntiManche(0);
 
             if (mancheCorrente == 0) {
