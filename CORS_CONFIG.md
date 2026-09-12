@@ -4,17 +4,17 @@ Per permettere al frontend Angular di comunicare con il backend, aggiungi questa
 
 ## Windows (PowerShell)
 ```powershell
-$env:ALLOWED_SERVERS = "http://localhost:4200"
+$env:ALLOWED_SERVERS = "http://localhost:4800"
 ```
 
 ## Windows (CMD)
 ```cmd
-set ALLOWED_SERVERS=http://localhost:4200
+set ALLOWED_SERVERS=http://localhost:4800
 ```
 
 ## Linux/Mac
 ```bash
-export ALLOWED_SERVERS=http://localhost:4200
+export ALLOWED_SERVERS=http://localhost:4800
 ```
 
 ## Oppure modifica application.yaml
@@ -23,7 +23,7 @@ Aggiungi alla fine del file `backend/src/main/resources/application.yaml`:
 
 ```yaml
 # CORS Configuration
-ALLOWED_SERVERS: http://localhost:4200,http://localhost:8083
+ALLOWED_SERVERS: http://localhost:4800,http://localhost:8083
 ```
 
 Poi riavvia il backend.

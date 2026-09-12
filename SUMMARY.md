@@ -105,13 +105,13 @@ npm install
 npm start
 ```
 
-Apri browser su: **http://localhost:4200**
+Apri browser su: **http://localhost:4800**
 
 ## ⚙️ Configurazione CORS
 
 Ho aggiunto la configurazione CORS nel file `application.yaml`:
 ```yaml
-ALLOWED_SERVERS: http://localhost:4200,http://localhost:8083
+ALLOWED_SERVERS: http://localhost:4800,http://localhost:8083
 ```
 
 Il backend è già configurato per accettare richieste dal frontend.
@@ -168,7 +168,7 @@ Il frontend Angular è completamente implementato e testabile. Tutte le funziona
 **Per iniziare a giocare:**
 1. Avvia il backend
 2. Avvia il frontend  
-3. Apri http://localhost:4200
+3. Apri http://localhost:4800
 4. Divertiti! 🎉
 
 ---

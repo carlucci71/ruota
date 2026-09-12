@@ -20,7 +20,7 @@ npm install
 npm start
 ```
 
-L'applicazione sarà disponibile su http://localhost:4200
+L'applicazione sarà disponibile su http://localhost:4800
 
 ## Funzionalità
 

@@ -11,7 +11,7 @@ call npm install
 
 echo.
 echo Avvio del server frontend...
-echo Il frontend sarà disponibile su: http://localhost:4200
+echo Il frontend sarà disponibile su: http://localhost:4800
 echo.
 
 call npm start

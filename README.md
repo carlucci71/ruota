@@ -26,7 +26,7 @@ ruota/
    ```bash
    start-frontend.bat
    ```
-   Il frontend sarà disponibile su: http://localhost:4200
+   Il frontend sarà disponibile su: http://localhost:4800
 
 ### Manuale
 
@@ -45,7 +45,7 @@ ruota/
 
 ## 🎮 Come Giocare
 
-1. Apri il browser su http://localhost:4200
+1. Apri il browser su http://localhost:4800
 2. Aggiungi almeno un giocatore
 3. Clicca su "Avvia Gioco"
 4. Gira la ruota e gioca!
@@ -85,7 +85,7 @@ http://localhost:8083/api/ruota/swagger-ui/index.html
 ### CORS Error
 Se vedi errori CORS, verifica che nel file `backend/src/main/resources/application.yaml` ci sia:
 ```yaml
-ALLOWED_SERVERS: http://localhost:4200,http://localhost:8083
+ALLOWED_SERVERS: http://localhost:4800,http://localhost:8083
 ```
 
 ### Port già in uso

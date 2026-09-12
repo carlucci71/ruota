@@ -36,7 +36,7 @@ cd frontend && npm install && npm start
 
 ## 3️⃣ Gioca!
 
-Apri il browser su: **http://localhost:4200**
+Apri il browser su: **http://localhost:4800**
 
 ## 🎮 Primi Passi
 
@@ -78,7 +78,7 @@ npm start
 ### Errore CORS
 Il file `backend/src/main/resources/application.yaml` deve contenere:
 ```yaml
-ALLOWED_SERVERS: http://localhost:4200,http://localhost:8083
+ALLOWED_SERVERS: http://localhost:4800,http://localhost:8083
 ```
 
 ## 📚 Più Info

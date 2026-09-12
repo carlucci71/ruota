@@ -157,7 +157,7 @@ frontend/
 
 **Backend (application.yaml):**
 - ✅ Aggiunto ALLOWED_SERVERS per CORS
-- ✅ Default: http://localhost:4200,http://localhost:8083
+- ✅ Default: http://localhost:4800,http://localhost:8083
 
 **Frontend:**
 - ✅ Angular 18 standalone components
@@ -191,7 +191,7 @@ start-frontend.bat
 ```
 
 ### 4. Gioca!
-Apri browser su: http://localhost:4200
+Apri browser su: http://localhost:4800
 
 ## ✨ Caratteristiche Implementate
 

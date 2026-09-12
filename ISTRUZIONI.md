@@ -18,7 +18,7 @@ cd frontend
 npm start
 ```
 
-Il frontend sarà disponibile su: http://localhost:4200
+Il frontend sarà disponibile su: http://localhost:4800
 
 ## 3. Configurazione CORS nel Backend
 
@@ -28,7 +28,7 @@ Se riscontri problemi CORS, assicurati che il file `SecurityConfig.java` conteng
 @Bean
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:4800"));
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("*"));
     configuration.setAllowCredentials(true);
