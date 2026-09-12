@@ -12,9 +12,9 @@ import { Giocatore } from '../models/game.model';
       <div class="action-group" *ngIf="canPlay">
         <div class="flex-column">
           <h2  *ngIf="giocatori && giocatori.length > 0 && 
-          fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
-          PRENOTATI PER DARE LA SOLUZIONE
-        </h2>
+            fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
+            PRENOTATI PER DARE LA SOLUZIONE
+          </h2>
           <div class="players-list" *ngIf="giocatori && giocatori.length > 0 && 
           fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
             <span class="player-card" *ngFor="let giocatore of giocatori">
@@ -32,13 +32,15 @@ import { Giocatore } from '../models/game.model';
           </button>
           <span
             *ngIf="fase === 'GIRA' && !isAutoSingolaChiamata
-            || (fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo)"
+            || (fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo)
+            || tipoManche === 'DOPO_CAMPANELLA'
+            "
           >
 
 
 
 <div class="action-group">
-        <div class="flex-row">
+    <div class="flex-row">
           <input 
             type="text" 
             [(ngModel)]="soluzione" 
@@ -55,7 +57,7 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && !isAutoSingolaChiamata">
+      <div class="action-group" *ngIf="canPlay && !isAutoSingolaChiamata && tipoManche!='DOPO_CAMPANELLA'">
         <h3>Gira la Ruota</h3>
         <div class="flex-row">
           <button 
@@ -218,12 +220,12 @@ export class AzioniComponent {
       this.consonante = '';
     }
       */
-      this.onConsonante.emit(consonante);
+    this.onConsonante.emit(consonante);
   }
 
   compraVocale(vocale: string): void {
     //if (confirm(`Vuoi comprare la vocale ${vocale}? (Costa 500 punti)`)) 
-      {
+    {
       this.onVocale.emit(vocale);
     }
   }
@@ -245,8 +247,8 @@ export class AzioniComponent {
   }
 
   provaSoluzioneAutoChiamata(nome: string): void {
-      this.stopTimer();
-      this.onPrenota.emit(nome);
+    this.stopTimer();
+    this.onPrenota.emit(nome);
   }
 
 }

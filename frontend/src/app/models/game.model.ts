@@ -44,4 +44,5 @@ export interface CallResponse extends GameInfo {
   FINE?: string;
   TROVATE?: string;
   PUNTI?: string;
+  SPICCHIO: string | number;
 }

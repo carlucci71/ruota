@@ -46,7 +46,9 @@ public class GameService {
 
     private Giocatore getGiocatoreCorrente() {
         String nome;
-        if (manches.get(mancheCorrente).tipoManche == TipoManche.STANDARD) {
+        if (manches.get(mancheCorrente).tipoManche == TipoManche.STANDARD
+                || manches.get(mancheCorrente).tipoManche == TipoManche.DOPO_CAMPANELLA
+        ) {
             nome = giocatoreTurno.getNome();
         } else {
             nome = nomeGiocatorePrenotato;
@@ -110,7 +112,7 @@ public class GameService {
                 }
             }
             if (spicchio.equals(SpicchiCustom.JOLLY)) {
-                if (jollyUse) {
+                if (jollyUse || manches.get(mancheCorrente).ultimo) {
                     spicchio = 100;
                 }
             }
@@ -329,6 +331,7 @@ public class GameService {
         garageUse = false;
         raddoppiaUse = false;
         jollyUse = false;
+        valoreUltimoGiro = null;
         fase = Fase.SETUP;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
@@ -363,15 +366,18 @@ public class GameService {
              */
 
         manches = List.of(
-                new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
-                new Manche(CategoriaManche.IN_FONDO_AL_MAR,TipoManche.STANDARD, 1000, null, false, false),
+                //new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false, false),
+                new Manche(CategoriaManche.IN_FONDO_AL_MAR, TipoManche.STANDARD, 1000, null, false, false),
+                /*
                 new Manche(CategoriaManche.TORMENTONI,TipoManche.STANDARD, 2000, null, false, false),
                 new Manche(CategoriaManche.CIAK_SI_GIRA,TipoManche.STANDARD, 3000, null, true, false),
                 new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE,TipoManche.STANDARD, 4000, null, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false, false),
                 new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false, false),
-                new Manche(CategoriaManche.ULTIMO_TURNO,TipoManche.STANDARD, 5000, null, false, true)
+
+                 */
+                new Manche(CategoriaManche.ULTIMO_TURNO, TipoManche.STANDARD, 5000, null, false, true)
         );
         mancheCorrente = 0;
 
@@ -387,8 +393,8 @@ public class GameService {
 
     public void nextGiocatore(String nome) {
         for (Giocatore giocatore : giocatori) {
-            if (giocatore.getNome().equalsIgnoreCase(nome)){
-                giocatoreTurno=giocatore;
+            if (giocatore.getNome().equalsIgnoreCase(nome)) {
+                giocatoreTurno = giocatore;
             }
         }
         fase = Fase.GIRA;
@@ -427,31 +433,35 @@ public class GameService {
         }
     }
 
-    private boolean campanellaUltimoGiro(){
-        int x = 10;//1 su x non suona
+    private boolean campanellaUltimoGiro() {
+        int x = 2;//1 su x non suona
         int random = utility.randomUntil(x);
-        if (random<x){
+        if (random < x) {
             return true;
         } else {
-            return  false;
+            return false;
         }
     }
 
-    private void sceltaUltimoGiro(){
-            if (campanellaUltimoGiro()){
-                Object gira;
-                do{
-                    gira = gira(null);
-                }while (gira == SpicchiCustom.PASSA
-                        || gira == SpicchiCustom.GARAGE
-                        || gira == SpicchiCustom.TRIPLO
-                        || gira == SpicchiCustom.BANCAROTTA
-                );
-                valoreUltimoGiro=Integer.valueOf(gira.toString());
-                Manche manche = manches.get(mancheCorrente);
-                manche.tipoManche = TipoManche.DOPO_CAMPANELLA;
-                fase = Fase.PARLA;
+    private void sceltaUltimoGiro() {
+        if (campanellaUltimoGiro()) {
+            Object gira;
+            do {
+                gira = gira(null);
+            } while (gira == SpicchiCustom.PASSA
+                    || gira == SpicchiCustom.GARAGE
+                    || gira == SpicchiCustom.TRIPLO
+                    || gira == SpicchiCustom.BANCAROTTA
+                    || gira == SpicchiCustom.JOLLY
+            );
+            valoreUltimoGiro = Integer.valueOf(gira.toString());
+            if (!valoreUltimoGiro.equals(manches.get(mancheCorrente).valoreCresce)) {
+                valoreUltimoGiro = 1000 + valoreUltimoGiro;
             }
+            Manche manche = manches.get(mancheCorrente);
+            manche.tipoManche = TipoManche.DOPO_CAMPANELLA;
+            fase = Fase.TENTA;
+        }
     }
 
     public void avvia(String nomeGiocatoreAvvia) {
@@ -564,7 +574,18 @@ Passa
         if (trovate == 0) {
             nextGiocatore();
         }
-        fase = Fase.GIRA;
+
+        if (valoreUltimoGiro != null) {
+            ret.put("SPICCHIO", valoreUltimoGiro);
+            nextGiocatore();
+            fase = Fase.TENTA;
+        } else {
+            fase = Fase.GIRA;
+        }
+        if (manches.get(mancheCorrente).ultimo && valoreUltimoGiro == null) {
+            sceltaUltimoGiro();
+            ret.put("SPICCHIO", valoreUltimoGiro);
+        }
         return ret;
     }
 
@@ -616,7 +637,7 @@ Passa
             giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + 1000);
             giocatoreCorrente.setPuntiManche(0);
 
-            if (mancheCorrente==0) {
+            if (mancheCorrente == 0) {
                 nextGiocatore(giocatoreCorrente.getNome());
             } else {
                 nextGiocatore();
@@ -624,7 +645,12 @@ Passa
             if (mancheCorrente + 1 < manches.size()) {
                 mancheCorrente++;
                 avvia(getGiocatoreCorrente().getNome());
-                fase = Fase.GIRA;
+                if (valoreUltimoGiro == null) {
+                    fase = Fase.GIRA;
+                } else {
+                    ret.put("SPICCHIO", valoreUltimoGiro);
+
+                }
             } else {
                 ret.put("FINE", "OK");
                 fase = Fase.FINE;
@@ -699,13 +725,13 @@ Passa
         return ret;
     }
 
-    enum Fase {SETUP, GIRA, PARLA, FINE}
+    enum Fase {SETUP, GIRA, PARLA, FINE, TENTA}
 
     enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD, DOPO_CAMPANELLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 
-    public enum CategoriaManche {PIATTI_ESTIVI, TRIPLETE, ULTIMO_TURNO, CIAK_SI_GIRA, TORMENTONI, IN_FONDO_AL_MAR, COMPITI_PER_LE_VACANZE, }
+    public enum CategoriaManche {PIATTI_ESTIVI, TRIPLETE, ULTIMO_TURNO, CIAK_SI_GIRA, TORMENTONI, IN_FONDO_AL_MAR, COMPITI_PER_LE_VACANZE,}
 
     @Data
     @AllArgsConstructor

@@ -205,8 +205,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   canPlay(): boolean {
     const fase = this.gameInfo?.Fase;
-    return this.gameInfo !== undefined && 
+    if (this.gameInfo?.TipoManche === 'DOPO_CAMPANELLA'){
+      return true;
+    } else {
+      return this.gameInfo !== undefined && 
            (fase === 'GIRA' || fase === 'PARLA');
+    }
   }
 
   getTabellone(): Tabellone | undefined {
@@ -348,8 +352,11 @@ export class AppComponent implements OnInit, OnDestroy {
           ret = ret + ' Punti '+data.PUNTI;
         }
         this.showMessage(ret, 'success');
-        
-        this.ultimoSpicchio = undefined;
+          if (data.SPICCHIO){
+            this.ultimoSpicchio = data.SPICCHIO;
+          } else{
+            this.ultimoSpicchio = undefined;
+          }
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore chiamata consonante', 'error');
@@ -381,12 +388,17 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
         if (data.ESITO && data.ESITO === 'OK') {
           this.showMessage('SOLUZIONE CORRETTA', 'success');
+          if (data.SPICCHIO){
+            this.ultimoSpicchio = data.SPICCHIO;
+          }
         } else {
           this.showMessage('Soluzione errata', 'error');
         }
       }
         
+      if (!data.SPICCHIO){
         this.ultimoSpicchio = undefined;
+      }
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore tentativo soluzione', 'error');
