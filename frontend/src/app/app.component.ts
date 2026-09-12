@@ -40,13 +40,16 @@ import { MessaggioComponent } from './components/messaggio.component';
           [tipoManche]="gameInfo?.TipoManche"
           [timerAttivo]="isTimerAttivo()"
           [isAutoSingolaChiamata]="isAutoSingolaChiamata()"
+          [tentaCountdown]="tentaCountdown"
+          [tentaTimerAttivo]="tentaTimerAttivo"
           (onGira)="giraRuota()"
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
           (onSoluzione)="tentaSoluzione($event)"
           (onStopTimer)="stopAutoSingolaChiamataLoopManuale()"
           (onPrenota)="prenota($event)"
-          (onStartTimer)="startAutoSingolaChiamataLoop()">
+          (onStartTimer)="startAutoSingolaChiamataLoop()"
+          (onDaiSoluzione)="stopTentaTimerManuale()">
         </app-azioni>
 
         <app-giocatori
@@ -106,6 +109,10 @@ export class AppComponent implements OnInit, OnDestroy {
   showDebug = false;
   private autoSingolaChiamataTimer?: ReturnType<typeof setInterval>;
   private timerStoppatoManualmente = false;
+  private tentaTimer?: ReturnType<typeof setInterval>;
+  tentaCountdown?: number;
+  tentaTimerAttivo = false;
+  private tentaTimerStoppatoManualmente = false;
 
   constructor(private gameService: GameService) {}
 
@@ -115,6 +122,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopAutoSingolaChiamataLoop();
+    this.stopTentaCountdown();
   }
 
   loadGameInfo(): void {
@@ -132,6 +140,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private setGameInfo(data: GameInfo): void {
     this.gameInfo = data;
     this.handleTipoManche();
+    this.handleTentaFase();
   }
 
   isAutoSingolaChiamata(): boolean {
@@ -189,6 +198,75 @@ export class AppComponent implements OnInit, OnDestroy {
     this.stopAutoSingolaChiamataLoop();
   }
 
+  /**
+   * Fase TENTA: parte un timer di 3 secondi in cui si può solo dare la soluzione.
+   * Allo scadere del timer il turno passa automaticamente via gameService.passa().
+   */
+  private handleTentaFase(): void {
+    if (this.gameInfo?.Fase === 'TENTA') {
+      // Timer già attivo o fermato dall'utente: non ripartire ad ogni aggiornamento dello stato
+      if (this.tentaTimer || this.tentaTimerStoppatoManualmente) {
+        return;
+      }
+      this.tentaTimerAttivo = true;
+      this.tentaCountdown = 3;
+      this.tentaTimer = setInterval(() => {
+        this.tentaCountdown = (this.tentaCountdown ?? 3) - 1;
+        if (this.tentaCountdown <= 0) {
+          this.tentaTimerAttivo = false;
+          this.tentaCountdown = 0;
+          if (this.tentaTimer) {
+            clearInterval(this.tentaTimer);
+            this.tentaTimer = undefined;
+          }
+          this.passaTurno();
+        }
+      }, 1000);
+    } else {
+      this.stopTentaCountdown();
+    }
+  }
+
+  private stopTentaCountdown(): void {
+    if (this.tentaTimer) {
+      clearInterval(this.tentaTimer);
+      this.tentaTimer = undefined;
+    }
+    this.tentaTimerAttivo = false;
+    this.tentaCountdown = undefined;
+    this.tentaTimerStoppatoManualmente = false;
+  }
+
+  /**
+   * Il giocatore preme "DO LA SOLUZIONE": ferma il countdown e l'auto-passa,
+   * lasciando il tempo di scrivere e inviare la soluzione.
+   */
+  stopTentaTimerManuale(): void {
+    this.tentaTimerStoppatoManualmente = true;
+    this.tentaTimerAttivo = false;
+    if (this.tentaTimer) {
+      clearInterval(this.tentaTimer);
+      this.tentaTimer = undefined;
+    }
+    this.tentaCountdown = this.tentaCountdown ?? 0;
+    this.showMessage('⏸️ Tempo fermato! Ora dai la soluzione', 'info');
+  }
+
+  passaTurno(): void {
+    // Se l'utente ha già dato la soluzione (fase cambiata) non bisogna passare
+    if (this.gameInfo?.Fase !== 'TENTA') {
+      return;
+    }
+    this.gameService.passa().subscribe({
+      next: (data) => {
+        this.setGameInfo(data);
+      },
+      error: (err) => {
+        this.showMessage(err.error?.message || 'Errore nel passaggio del turno', 'error');
+      }
+    });
+  }
+
   canStartGame(): boolean {
     const giocatori = this.gameInfo?.Giocatori || [];
     const tabelloneTitolo = this.gameInfo?.['Tabellone titolo'];
@@ -209,7 +287,7 @@ export class AppComponent implements OnInit, OnDestroy {
       return true;
     } else {
       return this.gameInfo !== undefined && 
-           (fase === 'GIRA' || fase === 'PARLA');
+           (fase === 'GIRA' || fase === 'PARLA' || fase === 'TENTA');
     }
   }
 

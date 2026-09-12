@@ -120,7 +120,7 @@ public class GameService {
                 spicchio = manches.get(mancheCorrente).valoreCresce;
             }
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
-                if (raddoppiaUse) {
+                if (raddoppiaUse || manches.get(mancheCorrente).ultimo) {
                     spicchio = SpicchiCustom.BANCAROTTA;
                 }
             }
@@ -577,8 +577,11 @@ Passa
 
         if (valoreUltimoGiro != null) {
             ret.put("SPICCHIO", valoreUltimoGiro);
-            nextGiocatore();
-            fase = Fase.TENTA;
+            if (trovate>0) {
+                fase = Fase.TENTA;
+            } else {
+                fase = Fase.PARLA;
+            }
         } else {
             fase = Fase.GIRA;
         }
@@ -658,8 +661,27 @@ Passa
         } else {
             ret.put("ESITO", "KO");
             nextGiocatore();
-            fase = Fase.GIRA;
+            if (valoreUltimoGiro == null) {
+                fase = Fase.GIRA;
+            } else {
+                ret.put("SPICCHIO", valoreUltimoGiro);
+                fase = Fase.PARLA;
+            }
         }
+        return ret;
+    }
+
+    /**
+     * Fase TENTA scaduta: nessuno ha dato la soluzione, il turno passa al giocatore successivo.
+     */
+    public Map<String, Object> passa() {
+        Map<String, Object> ret = new HashMap<>();
+        if (fase != Fase.TENTA) {
+            throw new RuntimeException("Puoi passare solo se sei nella fase TENTA, ora sei in fase: " + fase.name());
+        }
+        ret.put("ESITO", "KO");
+        nextGiocatore();
+        fase = Fase.PARLA;
         return ret;
     }
 

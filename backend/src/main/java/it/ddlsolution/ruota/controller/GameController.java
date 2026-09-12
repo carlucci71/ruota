@@ -80,6 +80,14 @@ public class GameController {
         return ResponseEntity.ok(ret);
     }
 
+    @GetMapping("/passa")
+    public ResponseEntity<Map<String, Object>> passa() {
+        Map<String, Object> callPassa = gameService.passa();
+        Map<String, Object> ret = gameService.buildInfo();
+        ret.putAll(callPassa);
+        return ResponseEntity.ok(ret);
+    }
+
     @GetMapping("/autoSingolaChiamata")
     public ResponseEntity<Map<String, Object>> autoSingolaChiamata(@RequestParam boolean nascondi) {
         Map<String, Object> autoSingolaChiamata = gameService.autoSingolaChiamata(nascondi);

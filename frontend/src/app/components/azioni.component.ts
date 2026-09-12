@@ -34,13 +34,22 @@ import { Giocatore } from '../models/game.model';
             *ngIf="fase === 'GIRA' && !isAutoSingolaChiamata
             || (fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo)
             || tipoManche === 'DOPO_CAMPANELLA'
+            || fase === 'TENTA'
             "
           >
 
 
 
 <div class="action-group">
-    <div class="flex-row">
+    <div class="tenta-timer" *ngIf="fase === 'TENTA' && tentaTimerAttivo">
+      <div class="tenta-countdown-text">
+        ⏳ {{ tentaCountdown }}s per dare la soluzione!
+      </div>
+      <button class="btn-warning btn-small" (click)="daiSoluzione()">
+        💡 DO LA SOLUZIONE
+      </button>
+    </div>
+    <div class="flex-row" *ngIf="!tentaTimerAttivo && fase!='FINE'">
           <input 
             type="text" 
             [(ngModel)]="soluzione" 
@@ -48,7 +57,7 @@ import { Giocatore } from '../models/game.model';
           <button 
             class="btn-success btn-success" 
             (click)="tentaSoluzione()"
-            [disabled]="!soluzione">
+            [disabled]="!soluzione || (fase === 'TENTA' && !tentaTimerAttivo && tentaCountdown === 0)">
             🎯 RISOLVI
           </button>
         </div>
@@ -175,6 +184,26 @@ import { Giocatore } from '../models/game.model';
       }
     }
 
+    .tenta-timer {
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #d63031;
+
+      .tenta-countdown-text {
+        margin-bottom: 6px;
+      }
+
+      button {
+        display: block;
+        margin: 0 auto;
+      }
+    }
+
     @keyframes pulse {
       0% { transform: scale(0.95); }
       50% { transform: scale(1.05); }
@@ -196,6 +225,8 @@ export class AzioniComponent {
   @Input() tipoManche?: string;
   @Input() timerAttivo = false;
   @Input() isAutoSingolaChiamata = false;
+  @Input() tentaCountdown?: number;
+  @Input() tentaTimerAttivo = false;
 
   @Output() onGira = new EventEmitter<void>();
   @Output() onConsonante = new EventEmitter<string>();
@@ -204,6 +235,7 @@ export class AzioniComponent {
   @Output() onStopTimer = new EventEmitter<void>();
   @Output() onStartTimer = new EventEmitter<void>();
   @Output() onPrenota = new EventEmitter<string>();
+  @Output() onDaiSoluzione = new EventEmitter<void>();
 
   soluzione = '';
   vocali = ['A', 'E', 'I', 'O', 'U'];
@@ -249,6 +281,10 @@ export class AzioniComponent {
   provaSoluzioneAutoChiamata(nome: string): void {
     this.stopTimer();
     this.onPrenota.emit(nome);
+  }
+
+  daiSoluzione(): void {
+    this.onDaiSoluzione.emit();
   }
 
 }

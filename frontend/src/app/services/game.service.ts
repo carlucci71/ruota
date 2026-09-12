@@ -54,6 +54,10 @@ export class GameService {
     return this.http.get<CallResponse>(`${this.apiUrl}/game/soluzione`, { params });
   }
 
+  passa(): Observable<GameInfo> {
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/passa`);
+  }
+
   // Giocatore endpoints
   addGiocatore(nome: string): Observable<GameInfo> {
     return this.http.post<GameInfo>(`${this.apiUrl}/giocatore`, { nome });

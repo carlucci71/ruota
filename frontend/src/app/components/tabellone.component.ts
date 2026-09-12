@@ -259,6 +259,11 @@ import { Tabellone, Giocatore } from '../models/game.model';
         color: white;
       }
       
+      &.phase-tenta {
+        background: #f39c12;
+        color: white;
+      }
+      
       &.phase-fine {
         background: #2ecc71;
         color: white;
