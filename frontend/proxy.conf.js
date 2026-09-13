@@ -16,8 +16,15 @@ module.exports = {
     target: 'http://localhost:8083',
     secure: false,
     changeOrigin: true,
+    ws: true, // Inoltra anche le connessioni WebSocket (/api/ruota/game/ws)
     configure(proxy) {
       proxy.on('proxyReq', (proxyReq) => {
+        proxyReq.removeHeader('origin');
+      });
+      // Per l'upgrade WebSocket http-proxy usa l'evento proxyReqWs (NON proxyReq):
+      // senza questo hook l'header Origin del browser arriverebbe al backend, che
+      // (OriginHandshakeInterceptor) rifiuterebbe l'handshake con 403.
+      proxy.on('proxyReqWs', (proxyReq) => {
         proxyReq.removeHeader('origin');
       });
     }

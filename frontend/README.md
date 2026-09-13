@@ -65,6 +65,13 @@ Per scoprire l'IP del server: `ipconfig getifaddr en0` (macOS) o `ipconfig` (Win
 - **PARLA**: Puoi chiamare consonante, comprare vocale o tentare la soluzione
 - **FINE**: Partita terminata
 
+### Aggiornamenti Real-Time (WebSocket)
+- Il frontend si connette a `ws://<host>/api/ruota/game/ws`
+- Ogni azione (giro ruota, chiamata lettera, giocatori, …) viene diffusa a
+  tutti i client connessi: i tabelloni aperti su più dispositivi restano
+  sincronizzati senza ricaricare la pagina
+- La connessione si riconnette automaticamente (backoff esponenziale) se cade
+
 ## Struttura
 
 ```

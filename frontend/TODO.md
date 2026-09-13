@@ -41,7 +41,7 @@
 - [ ] SEO optimization
 
 ### Backend Integration
-- [ ] WebSocket per aggiornamenti real-time
+- [x] WebSocket per aggiornamenti real-time
 - [ ] Gestione sessioni multiple
 - [ ] Database persistente
 - [ ] API rate limiting

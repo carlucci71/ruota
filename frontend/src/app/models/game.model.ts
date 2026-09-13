@@ -46,3 +46,12 @@ export interface CallResponse extends GameInfo {
   PUNTI?: string;
   SPICCHIO: string | number;
 }
+
+/**
+ * Messaggio ricevuto via WebSocket dal backend:
+ * { "tipo": "STATE", "data": { ...stato del gioco... } }
+ */
+export interface RealtimeMessage {
+  tipo: string;
+  data?: GameInfo;
+}

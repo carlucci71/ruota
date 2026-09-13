@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(expiredJwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        // Permetti auth endpoints
+                        // Permetti auth endpoints (incluso l'handshake WebSocket /game/ws)
                         .requestMatchers("/game/**").permitAll()
                         .requestMatchers("/giocatore/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()

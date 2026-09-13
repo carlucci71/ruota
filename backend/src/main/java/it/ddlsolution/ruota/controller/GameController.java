@@ -2,6 +2,7 @@ package it.ddlsolution.ruota.controller;
 
 import it.ddlsolution.ruota.dto.request.AvviaDTO;
 import it.ddlsolution.ruota.service.GameService;
+import it.ddlsolution.ruota.websocket.GameWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.Map;
 @Slf4j
 public class GameController {
     private final GameService gameService;
+    private final GameWebSocketHandler gameWebSocketHandler;
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> info() {
@@ -33,13 +35,17 @@ public class GameController {
     public ResponseEntity<Map<String, Object>> init() {
         //gameService.resetGiocatori();
         gameService.reset();
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> avvia(@RequestBody AvviaDTO avviaDTO) {
         gameService.avvia(avviaDTO.getNome());
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
     @GetMapping("/gira")
@@ -47,6 +53,7 @@ public class GameController {
         Object gira = gameService.gira(forzato);
         Map<String, Object> ret = gameService.buildInfo();
         ret.put("SPICCHIO", gira);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -58,6 +65,7 @@ public class GameController {
         Map<String, Object> chiamaConsonante = gameService.chiamaConsonante(consonante, trovato);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(chiamaConsonante);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -69,6 +77,7 @@ public class GameController {
         Map<String, Object> compraVocale = gameService.compraVocale(vocale);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(compraVocale);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -77,6 +86,7 @@ public class GameController {
         Map<String, Object> callSoluzione = gameService.soluzione(soluzione);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(callSoluzione);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -85,6 +95,7 @@ public class GameController {
         Map<String, Object> callPassa = gameService.passa();
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(callPassa);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -93,6 +104,7 @@ public class GameController {
         Map<String, Object> autoSingolaChiamata = gameService.autoSingolaChiamata(nascondi);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(autoSingolaChiamata);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 
@@ -101,6 +113,7 @@ public class GameController {
         Map<String, Object> prenota = gameService.prenota(nome);
         Map<String, Object> ret = gameService.buildInfo();
         ret.putAll(prenota);
+        gameWebSocketHandler.broadcast(ret);
         return ResponseEntity.ok(ret);
     }
 

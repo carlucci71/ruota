@@ -3,6 +3,7 @@ package it.ddlsolution.ruota.controller;
 import it.ddlsolution.ruota.dto.request.AddGiocatoreDTO;
 
 import it.ddlsolution.ruota.service.GameService;
+import it.ddlsolution.ruota.websocket.GameWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,29 +25,38 @@ import java.util.Map;
 public class GiocatoreController {
 
     private final GameService gameService;
+    private final GameWebSocketHandler gameWebSocketHandler;
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> add(@RequestBody AddGiocatoreDTO addGiocatore) {
         gameService.addGiocatori(addGiocatore.getNome());
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
     @PutMapping("/{nome}")
     public ResponseEntity<Map<String, Object>> update(@RequestBody AddGiocatoreDTO addGiocatore, @PathVariable String nome) {
         gameService.update(addGiocatore.getNome(),nome);
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
     @DeleteMapping("/{nome}")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable String nome) {
         gameService.deleteGiocatore(nome);
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
     @DeleteMapping
     public ResponseEntity<Map<String, Object>> reset() {
         gameService.resetGiocatori();
-        return ResponseEntity.ok(gameService.buildInfo());
+        Map<String, Object> ret = gameService.buildInfo();
+        gameWebSocketHandler.broadcast(ret);
+        return ResponseEntity.ok(ret);
     }
 
 }

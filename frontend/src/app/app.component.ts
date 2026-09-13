@@ -1,7 +1,9 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { GameService } from './services/game.service';
-import { GameInfo, SpinResponse, CallResponse, Tabellone, Giocatore } from './models/game.model';
+import { RealtimeService } from './services/realtime.service';
+import { GameInfo, SpinResponse, CallResponse, Tabellone, Giocatore, RealtimeMessage } from './models/game.model';
 import { GiocatoriComponent } from './components/giocatori.component';
 import { TabelloneComponent } from './components/tabellone.component';
 import { AzioniComponent } from './components/azioni.component';
@@ -20,7 +22,7 @@ const TENTA_COUNTDOWN_SECONDI = 3;
   imports: [CommonModule, GiocatoriComponent, TabelloneComponent, AzioniComponent, SetupComponent, MessaggioComponent],
   template: `
     <div class="container">
-      <h1>🎡 RUOTA DELLA FORTUNA 🎡</h1>
+      <h1>🎡 RUOTA DELLA FORTUNA 🎡 <span class="ws-status" [ngClass]="wsConnesso ? 'ws-on' : 'ws-off'" title="Connessione real-time">{{ wsConnesso ? '🔗 LIVE' : '⚠️ OFFLINE' }}</span></h1>
       
       <app-messaggio [lastMessage]="lastMessage"></app-messaggio>
 
@@ -86,6 +88,32 @@ const TENTA_COUNTDOWN_SECONDI = 3;
       max-width: 100%;
     }
 
+    .ws-status {
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 10px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.35em;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+
+      &.ws-on {
+        background: #2ecc71;
+        color: white;
+      }
+
+      &.ws-off {
+        background: #e74c3c;
+        color: white;
+        animation: blink 1s infinite;
+      }
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.4; }
+    }
+
     .debug-info {
       margin-top: 30px;
       padding: 20px;
@@ -119,16 +147,91 @@ export class AppComponent implements OnInit, OnDestroy {
   tentaCountdown?: number;
   tentaTimerAttivo = false;
   private tentaTimerStoppatoManualmente = false;
+  private realtimeSubscription?: Subscription;
+  private statoConnessioneSubscription?: Subscription;
+  private resyncTimer?: ReturnType<typeof setInterval>;
+  private ultimoResync = 0;
+  /** Stato della connessione WebSocket (mostrato in UI). */
+  wsConnesso = true;
 
-  constructor(private gameService: GameService) {}
+  constructor(
+    private gameService: GameService,
+    private realtimeService: RealtimeService
+  ) {}
 
   ngOnInit(): void {
     this.loadGameInfo();
+    // Sottoscrizione agli aggiornamenti real-time: quando un altro client
+    // modifica lo stato del gioco, il tabellone si aggiorna automaticamente.
+    this.realtimeService.connect();
+    this.realtimeSubscription = this.realtimeService.getMessages().subscribe((messaggio) => {
+      this.handleRealtimeMessage(messaggio);
+    });
+    // Indicatore di stato della connessione real-time
+    this.statoConnessioneSubscription = this.realtimeService.getStatoConnessione().subscribe((connesso) => {
+      this.wsConnesso = connesso;
+    });
+    // Fallback: se il WebSocket non e' connesso, risincronizza via HTTP
+    // (garantisce la sincronizzazione anche senza WebSocket, es. proxy senza
+    // supporto ws o backend momentaneamente irraggiungibile)
+    this.resyncTimer = setInterval(() => this.resyncSeOffline(), 5000);
   }
 
   ngOnDestroy(): void {
+    this.realtimeSubscription?.unsubscribe();
+    this.statoConnessioneSubscription?.unsubscribe();
+    if (this.resyncTimer) {
+      clearInterval(this.resyncTimer);
+      this.resyncTimer = undefined;
+    }
+    this.realtimeService.disconnect();
     this.stopAutoSingolaChiamataLoop();
     this.stopTentaCountdown();
+  }
+
+  /**
+   * Il tab torna visibile (o la finestra riprende il focus): forza un
+   * riallineamento immediato per non restare indietro rispetto al gioco.
+   */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (!document.hidden) {
+      this.resincronizza();
+    }
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    this.resincronizza();
+  }
+
+  /** Riallinea lo stato: riconnette il WS se caduto e chiede lo stato corrente. */
+  private resincronizza(): void {
+    // Debounce: focus e visibilitychange possono arrivare insieme
+    const ora = Date.now();
+    if (ora - this.ultimoResync < 1000) {
+      return;
+    }
+    this.ultimoResync = ora;
+    if (!this.realtimeService.isConnesso()) {
+      this.realtimeService.connect();
+    }
+    this.resyncDaHttp();
+  }
+
+  /** Rilegge lo stato via HTTP e lo applica senza avviare timer/loop locali. */
+  private resyncDaHttp(): void {
+    this.gameService.getGameInfo().subscribe({
+      next: (data) => this.applyRealtimeState(data),
+      error: () => {/* il server non e' raggiungibile: si riprovera' al prossimo tick */}
+    });
+  }
+
+  /** Poll di sicurezza: solo quando il WebSocket e' offline. */
+  private resyncSeOffline(): void {
+    if (!this.realtimeService.isConnesso()) {
+      this.resyncDaHttp();
+    }
   }
 
   loadGameInfo(): void {
@@ -147,6 +250,53 @@ export class AppComponent implements OnInit, OnDestroy {
     this.gameInfo = data;
     this.handleTipoManche();
     this.handleTentaFase();
+  }
+
+  /**
+   * Messaggio ricevuto via WebSocket dal backend.
+   */
+  private handleRealtimeMessage(messaggio: RealtimeMessage): void {
+    if (messaggio.tipo !== 'STATE' || !messaggio.data) {
+      return;
+    }
+    this.applyRealtimeState(messaggio.data);
+  }
+
+  /**
+   * Applica uno stato ricevuto real-time (WebSocket) da un altro client.
+   *
+   * Aggiorna lo stato del gioco e il risultato della ruota, ma NON fa
+   * ripartire i timer/loop (auto singola chiamata, fase TENTA): quelli sono
+   * gestiti solo dal client che ha eseguito l'azione via HTTP, per evitare
+   * chiamate duplicate/concorrenti da più tab/client.
+   */
+  private applyRealtimeState(data: GameInfo): void {
+    // Riallinea il risultato della ruota se il payload lo contiene
+    if (data['SPICCHIO'] !== undefined) {
+      this.ultimoSpicchio = data['SPICCHIO'];
+    } else if (data['TROVATE'] !== undefined || data['FINE'] !== undefined || data['ESITO'] !== undefined) {
+      this.ultimoSpicchio = undefined;
+    }
+
+    this.gameInfo = data;
+
+    // Ferma i timer locali se la fase ricevuta non li richiede più
+    this.handleTentaFaseRealtime();
+    this.handleTipoMancheRealtime();
+  }
+
+  private handleTentaFaseRealtime(): void {
+    if (this.gameInfo?.Fase !== 'TENTA') {
+      this.stopTentaCountdown();
+    }
+  }
+
+  private handleTipoMancheRealtime(): void {
+    // Usciti dalla manche auto singola chiamata: ferma l'eventuale loop locale
+    if (!this.isAutoSingolaChiamata() || this.gameInfo?.Fase !== 'GIRA') {
+      this.stopAutoSingolaChiamataLoop();
+      this.timerStoppatoManualmente = false;
+    }
   }
 
   isAutoSingolaChiamata(): boolean {
