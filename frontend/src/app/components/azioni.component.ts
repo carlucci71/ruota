@@ -17,7 +17,7 @@ import { Giocatore } from '../models/game.model';
           </h2>
           <div class="players-list" *ngIf="giocatori && giocatori.length > 0 && 
           fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
-            <span class="player-card" *ngFor="let giocatore of giocatori">
+            <span class="player-card" *ngFor="let giocatore of giocatoriPrenotabili">
               <button class="btn-danger btn-small" (click)="provaSoluzioneAutoChiamata(giocatore.nome)">
                 {{ giocatore.nome }}
               </button>
@@ -27,6 +27,7 @@ import { Giocatore } from '../models/game.model';
           <button 
             class="btn-primary btn-large" 
             *ngIf="fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo"
+            [disabled]="!puoAgire"
             (click)="startTimer()">
             ▶️ RIPRENDI TIMER
           </button>
@@ -45,7 +46,7 @@ import { Giocatore } from '../models/game.model';
       <div class="tenta-countdown-text">
         ⏳ {{ tentaCountdown }}s per dare la soluzione!
       </div>
-      <button class="btn-warning btn-small" (click)="daiSoluzione()">
+      <button class="btn-warning btn-small" (click)="daiSoluzione()" [disabled]="!puoAgire">
         💡 DO LA SOLUZIONE
       </button>
     </div>
@@ -53,11 +54,12 @@ import { Giocatore } from '../models/game.model';
           <input 
             type="text" 
             [(ngModel)]="soluzione" 
+            [disabled]="!puoAgire"
             placeholder="Scrivi la soluzione completa">
           <button 
             class="btn-success btn-success" 
             (click)="tentaSoluzione()"
-            [disabled]="!soluzione || (fase === 'TENTA' && !tentaTimerAttivo && tentaCountdown === 0)">
+            [disabled]="!puoAgire || !soluzione || (fase === 'TENTA' && !tentaTimerAttivo && tentaCountdown === 0)">
             🎯 RISOLVI
           </button>
         </div>
@@ -72,7 +74,7 @@ import { Giocatore } from '../models/game.model';
           <button 
             class="btn-primary btn-large" 
             (click)="gira()"
-            [disabled]="fase !== 'GIRA'">
+            [disabled]="fase !== 'GIRA' || !puoAgire">
             🎰 GIRA LA RUOTA
           </button>
         </div>
@@ -88,6 +90,7 @@ import { Giocatore } from '../models/game.model';
           <button 
             *ngFor="let c of consonanti"
             class="btn-warning vowel-btn" 
+            [disabled]="!puoAgire"
             (click)="chiamaConsonante(c)">
             {{ c }}
           </button>
@@ -100,6 +103,7 @@ import { Giocatore } from '../models/game.model';
           <button 
             *ngFor="let v of vocali"
             class="btn-warning vowel-btn" 
+            [disabled]="!puoAgire"
             (click)="compraVocale(v)">
             {{ v }}
           </button>
@@ -227,6 +231,9 @@ export class AzioniComponent {
   @Input() isAutoSingolaChiamata = false;
   @Input() tentaCountdown?: number;
   @Input() tentaTimerAttivo = false;
+  /** Il giocatore associato a questo browser (nessuno = modalità regia). */
+  @Input() giocatoreConnesso?: string;
+  @Input() puoAgire = true;
 
   @Output() onGira = new EventEmitter<void>();
   @Output() onConsonante = new EventEmitter<string>();
@@ -240,6 +247,14 @@ export class AzioniComponent {
   soluzione = '';
   vocali = ['A', 'E', 'I', 'O', 'U'];
   consonanti = ['B', 'C', 'D', 'F', 'G', 'H', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'Z', 'J', 'K', 'W', 'X', 'Y'];
+
+  /** Con un giocatore connesso ci si può prenotare solo per lui. */
+  get giocatoriPrenotabili(): Giocatore[] {
+    if (!this.giocatoreConnesso) {
+      return this.giocatori;
+    }
+    return this.giocatori.filter(g => g.nome.toUpperCase() === this.giocatoreConnesso!.toUpperCase());
+  }
 
   gira(): void {
     this.onGira.emit();

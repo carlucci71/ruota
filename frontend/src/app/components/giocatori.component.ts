@@ -22,9 +22,12 @@ import { Giocatore } from '../models/game.model';
       </div>
 
       <div class="players-list" *ngIf="giocatori && giocatori.length > 0">
-        <div class="player-card" *ngFor="let giocatore of giocatori">
+        <div class="player-card" *ngFor="let giocatore of giocatori"
+            [class.connesso]="isConnesso(giocatore.nome)">
           <div class="player-info">
-            <span class="player-name">{{ giocatore.nome }}</span>
+            <span class="player-name">{{ giocatore.nome }}
+              <span class="badge-connesso" *ngIf="isConnesso(giocatore.nome)">🔗 QUESTO BROWSER</span>
+            </span>
             <div class="player-stats">
               <span class="stat">💰 Totale: {{ giocatore.puntiTotale }}</span>
               <span class="stat">🎯 Manche: {{ giocatore.puntiManche }}</span>
@@ -32,10 +35,17 @@ import { Giocatore } from '../models/game.model';
               <span class="badge" *ngIf="giocatore.withGarage">🚗 GARAGE</span>
             </div>
           </div>
-          <button class="btn-danger btn-small" (click)="elimina(giocatore.nome)"
-              *ngIf="fase === 'SETUP'">
-            ELIMINA
-          </button>
+          <div class="player-actions">
+            <button class="btn-small"
+                [ngClass]="isConnesso(giocatore.nome) ? 'btn-warning' : 'btn-primary'"
+                (click)="connetti(giocatore.nome)">
+              {{ isConnesso(giocatore.nome) ? 'DISCONNETTI' : 'CONNETTI' }}
+            </button>
+            <button class="btn-danger btn-small" (click)="elimina(giocatore.nome)"
+                *ngIf="fase === 'SETUP'">
+              ELIMINA
+            </button>
+          </div>
         </div>
       </div>
 
@@ -84,6 +94,25 @@ import { Giocatore } from '../models/game.model';
       &:hover {
         transform: translateX(5px);
       }
+
+      &.connesso {
+        outline: 3px solid #2ecc71;
+      }
+    }
+
+    .player-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .badge-connesso {
+      margin-left: 10px;
+      padding: 3px 8px;
+      background: #2ecc71;
+      color: white;
+      border-radius: 5px;
+      font-size: 0.55em;
+      vertical-align: middle;
     }
 
     .player-info {
@@ -133,11 +162,21 @@ import { Giocatore } from '../models/game.model';
 export class GiocatoriComponent {
   @Input() giocatori: Giocatore[] = [];
   @Input() fase?: string;
+  @Input() giocatoreConnesso?: string;
   @Output() onAdd = new EventEmitter<string>();
   @Output() onDelete = new EventEmitter<string>();
   @Output() onReset = new EventEmitter<void>();
+  @Output() onConnetti = new EventEmitter<string | undefined>();
 
   nuovoGiocatore = '';
+
+  isConnesso(nome: string): boolean {
+    return !!this.giocatoreConnesso && this.giocatoreConnesso.toUpperCase() === nome.toUpperCase();
+  }
+
+  connetti(nome: string): void {
+    this.onConnetti.emit(this.isConnesso(nome) ? undefined : nome);
+  }
 
   aggiungi(): void {
     if (this.nuovoGiocatore.trim()) {

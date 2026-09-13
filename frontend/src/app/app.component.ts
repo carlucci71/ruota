@@ -16,6 +16,9 @@ const AUTO_SINGOLA_CHIAMATA_INTERVALO_MS = 2000;
 /** Durata (in secondi) del countdown nella fase TENTA prima del passaggio automatico del turno */
 const TENTA_COUNTDOWN_SECONDI = 3;
 
+/** Chiave localStorage con il giocatore associato a questo browser */
+const GIOCATORE_CONNESSO_KEY = 'ruota.giocatoreConnesso';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -50,6 +53,8 @@ const TENTA_COUNTDOWN_SECONDI = 3;
           [isAutoSingolaChiamata]="isAutoSingolaChiamata()"
           [tentaCountdown]="tentaCountdown"
           [tentaTimerAttivo]="tentaTimerAttivo"
+          [giocatoreConnesso]="giocatoreConnesso"
+          [puoAgire]="puoAgire()"
           (onGira)="giraRuota()"
           (onConsonante)="chiamaConsonante($event)"
           (onVocale)="compraVocale($event)"
@@ -63,6 +68,8 @@ const TENTA_COUNTDOWN_SECONDI = 3;
         <app-giocatori
           [giocatori]="gameInfo?.Giocatori || []"
           [fase]="gameInfo?.Fase"
+          [giocatoreConnesso]="giocatoreConnesso"
+          (onConnetti)="connettiGiocatore($event)"
           (onAdd)="addGiocatore($event)"
           (onDelete)="deleteGiocatore($event)"
           (onReset)="resetGiocatori()">
@@ -153,6 +160,8 @@ export class AppComponent implements OnInit, OnDestroy {
   private statoConnessioneSubscription?: Subscription;
   private resyncTimer?: ReturnType<typeof setInterval>;
   private ultimoResync = 0;
+  /** Giocatore associato a questo browser (undefined = modalità regia). */
+  giocatoreConnesso?: string;
   /** Stato della connessione WebSocket (mostrato in UI). */
   wsConnesso = true;
 
@@ -162,6 +171,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.giocatoreConnesso = localStorage.getItem(GIOCATORE_CONNESSO_KEY) ?? undefined;
     this.loadGameInfo();
     // Sottoscrizione agli aggiornamenti real-time: quando un altro client
     // modifica lo stato del gioco, il tabellone si aggiorna automaticamente.
@@ -508,6 +518,42 @@ export class AppComponent implements OnInit, OnDestroy {
       return this.gameInfo !== undefined && 
            (fase === 'GIRA' || fase === 'PARLA' || fase === 'TENTA');
     }
+  }
+
+  /** Associa (o dissocia) questo browser a un giocatore. */
+  connettiGiocatore(nome?: string): void {
+    this.giocatoreConnesso = nome;
+    if (nome) {
+      localStorage.setItem(GIOCATORE_CONNESSO_KEY, nome);
+      this.showMessage(`Browser connesso come ${nome}`, 'success');
+    } else {
+      localStorage.removeItem(GIOCATORE_CONNESSO_KEY);
+      this.showMessage('Browser disconnesso dal giocatore', 'info');
+    }
+  }
+
+  /**
+   * Azioni dispositive abilitate: senza giocatore connesso il browser resta in
+   * modalità regia (tutto abilitato), altrimenti solo per il giocatore di turno
+   * (o, in auto singola chiamata, per chi ha prenotato).
+   */
+  puoAgire(): boolean {
+    if (!this.giocatoreConnesso) {
+      return true;
+    }
+    if (this.isAutoSingolaChiamata()) {
+      const prenotato = this.gameInfo?.GiocatorePrenotato;
+      if (prenotato && prenotato !== '--') {
+        return this.stessoGiocatore(prenotato);
+      }
+      return true;
+    }
+    const turno = this.getGiocatoreTurno();
+    return !!turno && this.stessoGiocatore(turno.nome);
+  }
+
+  private stessoGiocatore(nome: string): boolean {
+    return !!this.giocatoreConnesso && nome.toUpperCase() === this.giocatoreConnesso.toUpperCase();
   }
 
   getTabellone(): Tabellone | undefined {
