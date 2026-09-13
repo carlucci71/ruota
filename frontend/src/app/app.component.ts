@@ -56,7 +56,7 @@ const TENTA_COUNTDOWN_SECONDI = 3;
           (onSoluzione)="tentaSoluzione($event)"
           (onStopTimer)="stopAutoSingolaChiamataLoopManuale()"
           (onPrenota)="prenota($event)"
-          (onStartTimer)="startAutoSingolaChiamataLoop()"
+          (onStartTimer)="riprendiAutoSingolaChiamataLoop()"
           (onDaiSoluzione)="stopTentaTimerManuale()">
         </app-azioni>
 
@@ -143,6 +143,8 @@ export class AppComponent implements OnInit, OnDestroy {
   showDebug = false;
   private autoSingolaChiamataTimer?: ReturnType<typeof setInterval>;
   private timerStoppatoManualmente = false;
+  /** Timer ripreso da un altro client: qui si rispecchia solo lo stato in UI. */
+  private timerRemotoAttivo = false;
   private tentaTimer?: ReturnType<typeof setInterval>;
   tentaCountdown?: number;
   tentaTimerAttivo = false;
@@ -263,6 +265,20 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Un altro client ha ripreso il timer dell'auto singola chiamata: qui il
+   * loop HTTP NON riparte (lo esegue solo il client che ha premuto RIPRENDI,
+   * altrimenti le chiamate si duplicherebbero), viene rispecchiato lo stato
+   * del timer in UI e gli aggiornamenti arrivano via broadcast STATE.
+   */
+  private handleRiprendiTimerRealtime(): void {
+    if (!this.isAutoSingolaChiamata() || this.gameInfo?.Fase !== 'GIRA') {
+      return;
+    }
+    this.timerStoppatoManualmente = false;
+    this.timerRemotoAttivo = !this.autoSingolaChiamataTimer;
+  }
+
+  /**
    * Applica uno stato ricevuto real-time (WebSocket) da un altro client.
    *
    * Aggiorna lo stato del gioco e il risultato della ruota, ma NON fa
@@ -283,6 +299,27 @@ export class AppComponent implements OnInit, OnDestroy {
     // Ferma i timer locali se la fase ricevuta non li richiede più
     this.handleTentaFaseRealtime();
     this.handleTipoMancheRealtime();
+
+    if (data['CONTESTO'] === 'PRENOTA') {
+      this.handlePrenotaRealtime(data);
+    }
+
+    if (data['RIPRENDI_TIMER'] === true || data['RIPRENDI_TIMER'] === 'true') {
+      this.handleRiprendiTimerRealtime();
+    }
+  }
+
+  /**
+   * Un altro client ha prenotato la soluzione: stesso comportamento del client
+   * che preme PRENOTA (stop manuale del timer e avvio del countdown TENTA).
+   */
+  private handlePrenotaRealtime(data: GameInfo): void {
+    this.stopAutoSingolaChiamataLoopManuale();
+    this.handleTentaFase();
+    const nome = data['GiocatorePrenotato'];
+    if (nome && nome !== '--') {
+      this.showMessage(`Giocatore ${nome} prenota la soluzione`, 'info');
+    }
   }
 
   private handleTentaFaseRealtime(): void {
@@ -296,6 +333,12 @@ export class AppComponent implements OnInit, OnDestroy {
     if (!this.isAutoSingolaChiamata() || this.gameInfo?.Fase !== 'GIRA') {
       this.stopAutoSingolaChiamataLoop();
       this.timerStoppatoManualmente = false;
+      return;
+    }
+    // In manche auto singola chiamata il timer gira sul client che ha avviato:
+    // qui lo si rispecchia in UI senza eseguire il loop HTTP.
+    if (!this.autoSingolaChiamataTimer && !this.timerStoppatoManualmente) {
+      this.timerRemotoAttivo = true;
     }
   }
 
@@ -318,11 +361,30 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   isTimerAttivo(): boolean {
-    return !!this.autoSingolaChiamataTimer;
+    return !!this.autoSingolaChiamataTimer || this.timerRemotoAttivo;
+  }
+
+  /**
+   * L'utente preme RIPRENDI TIMER: oltre a far ripartire il loop locale,
+   * avvisa il backend (riprendi=true) che propaga l'evento agli altri client.
+   */
+  riprendiAutoSingolaChiamataLoop(): void {
+    this.startAutoSingolaChiamataLoop();
+    const nascondi = this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+    this.gameService.autoSingolaChiamata(nascondi, true).subscribe({
+      next: (data) => {
+        this.setGameInfo(data);
+      },
+      error: (err) => {
+        console.error('Errore ripresa auto singola chiamata:', err);
+        this.showMessage('Errore chiamata automatica', 'error');
+      }
+    });
   }
 
   startAutoSingolaChiamataLoop(): void {
     this.timerStoppatoManualmente = false;
+    this.timerRemotoAttivo = false;
 
     if (this.autoSingolaChiamataTimer) {
       return;
@@ -343,6 +405,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   stopAutoSingolaChiamataLoop(): void {
+    this.timerRemotoAttivo = false;
     if (this.autoSingolaChiamataTimer) {
       clearInterval(this.autoSingolaChiamataTimer);
       this.autoSingolaChiamataTimer = undefined;

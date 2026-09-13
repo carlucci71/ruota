@@ -44,8 +44,15 @@ export class GameService {
     return this.http.get<CallResponse>(`${this.apiUrl}/game/vocale`, { params });
   }
 
-  autoSingolaChiamata(nascondi: boolean): Observable<GameInfo> {
-    const params = new HttpParams().set('nascondi', nascondi);
+  /**
+   * @param riprendi true solo sulla chiamata che riprende il timer: il backend
+   * la propaga agli altri client con un broadcast dedicato.
+   */
+  autoSingolaChiamata(nascondi: boolean, riprendi = false): Observable<GameInfo> {
+    let params = new HttpParams().set('nascondi', nascondi);
+    if (riprendi) {
+      params = params.set('riprendi', true);
+    }
     return this.http.get<GameInfo>(`${this.apiUrl}/game/autoSingolaChiamata`, { params });
   }
 

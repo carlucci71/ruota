@@ -31,7 +31,7 @@ public class GiocatoreController {
     public ResponseEntity<Map<String, Object>> add(@RequestBody AddGiocatoreDTO addGiocatore) {
         gameService.addGiocatori(addGiocatore.getNome());
         Map<String, Object> ret = gameService.buildInfo();
-        gameWebSocketHandler.broadcast(ret);
+        gameWebSocketHandler.broadcast(ret, "ADD_GIOCATORE");
         return ResponseEntity.ok(ret);
     }
 
@@ -39,7 +39,7 @@ public class GiocatoreController {
     public ResponseEntity<Map<String, Object>> update(@RequestBody AddGiocatoreDTO addGiocatore, @PathVariable String nome) {
         gameService.update(addGiocatore.getNome(),nome);
         Map<String, Object> ret = gameService.buildInfo();
-        gameWebSocketHandler.broadcast(ret);
+        gameWebSocketHandler.broadcast(ret,"UPD_GIOCATORE");
         return ResponseEntity.ok(ret);
     }
 
@@ -47,7 +47,7 @@ public class GiocatoreController {
     public ResponseEntity<Map<String, Object>> delete(@PathVariable String nome) {
         gameService.deleteGiocatore(nome);
         Map<String, Object> ret = gameService.buildInfo();
-        gameWebSocketHandler.broadcast(ret);
+        gameWebSocketHandler.broadcast(ret, "DEL_GIOCATORE");
         return ResponseEntity.ok(ret);
     }
 
@@ -55,7 +55,7 @@ public class GiocatoreController {
     public ResponseEntity<Map<String, Object>> reset() {
         gameService.resetGiocatori();
         Map<String, Object> ret = gameService.buildInfo();
-        gameWebSocketHandler.broadcast(ret);
+        gameWebSocketHandler.broadcast(ret, "RESET");
         return ResponseEntity.ok(ret);
     }
 

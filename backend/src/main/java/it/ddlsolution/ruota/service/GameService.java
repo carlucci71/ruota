@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class GameService {
     private int contaPopcornUse;
     private List<Integer> posizioniCinema;
     List<Manche> manches = new ArrayList<>();
-    private int mancheCorrente;
+    private Integer mancheCorrente;
     private int contaChiamateNascoste;
 
     private Giocatore getGiocatoreCorrente() {
@@ -335,6 +336,9 @@ public class GameService {
         jollyUse = false;
         valoreUltimoGiro = null;
         giocatoreIniziaManche =null;
+        mancheCorrente=null;
+        manches=new ArrayList<>();
+
         fase = Fase.SETUP;
         for (Giocatore giocatore : giocatori) {
             giocatore.setPuntiTotale(0);
@@ -742,9 +746,16 @@ Passa
         return ret;
     }
 
+    public Manche getMancheCorrente(){
+        if (ObjectUtils.isEmpty(manches)){
+            return null;
+        }
+        return manches.get(mancheCorrente);
+    }
+
     enum Fase {SETUP, GIRA, PARLA, FINE, TENTA}
 
-    enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD, DOPO_CAMPANELLA}
+    public enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD, DOPO_CAMPANELLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 
@@ -752,7 +763,7 @@ Passa
 
     @Data
     @AllArgsConstructor
-    static class Manche {
+    public static class Manche {
         CategoriaManche categoriaManche;
         TipoManche tipoManche;
         Integer valoreCresce;

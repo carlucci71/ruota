@@ -11,6 +11,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,15 +78,18 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
     /** Invia a tutti i client connessi lo stato aggiornato del gioco. */
     public void broadcastStato() {
-        broadcast(gameService.buildInfo());
+        broadcast(gameService.buildInfo(), "INFO");
     }
 
     /**
      * Diffonde un payload (in genere la stessa mappa restituita dal controller)
      * a tutti i client connessi, avvolto nel messaggio {@code STATE}.
      */
-    public void broadcast(Map<String, Object> payload) {
-        String json = serializza(payload);
+    public void broadcast(Map<String, Object> payload, String contesto) {
+        Map<String, Object> linked = new LinkedHashMap<>();
+        linked.put("CONTESTO", contesto);
+        linked.putAll(payload);
+        String json = serializza(linked);
         if (json == null) {
             return;
         }
