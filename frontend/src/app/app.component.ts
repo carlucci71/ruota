@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { GameService } from './services/game.service';
 import { RealtimeService } from './services/realtime.service';
-import { GameInfo, SpinResponse, CallResponse, Tabellone, Giocatore, RealtimeMessage } from './models/game.model';
+import { GameInfo, Tabellone, Giocatore, RealtimeMessage } from './models/game.model';
 import { GiocatoriComponent } from './components/giocatori.component';
 import { TabelloneComponent } from './components/tabellone.component';
 import { AzioniComponent } from './components/azioni.component';
@@ -25,7 +25,9 @@ const GIOCATORE_CONNESSO_KEY = 'ruota.giocatoreConnesso';
   imports: [CommonModule, GiocatoriComponent, TabelloneComponent, AzioniComponent, SetupComponent, MessaggioComponent],
   template: `
     <div class="container">
-      <h1>🎡 RUOTA DELLA FORTUNA 🎡 <span class="ws-status" [ngClass]="wsConnesso ? 'ws-on' : 'ws-off'" title="Connessione real-time">{{ wsConnesso ? '🔗 LIVE' : '⚠️ OFFLINE' }}</span></h1>
+    <!--  
+    <h1>🎡 RUOTA DELLA FORTUNA 🎡 <span class="ws-status" [ngClass]="wsConnesso ? 'ws-on' : 'ws-off'" title="Connessione real-time">{{ wsConnesso ? '🔗 LIVE' : '⚠️ OFFLINE' }}</span></h1>
+-->
       
       <app-messaggio [lastMessage]="lastMessage"></app-messaggio>
 
@@ -49,6 +51,7 @@ const GIOCATORE_CONNESSO_KEY = 'ruota.giocatoreConnesso';
           [canPlay]="canPlay()"
           [ultimoSpicchio]="ultimoSpicchio"
           [tipoManche]="gameInfo?.TipoManche"
+          [giocatorePrenotato]="gameInfo?.GiocatorePrenotato"
           [timerAttivo]="isTimerAttivo()"
           [isAutoSingolaChiamata]="isAutoSingolaChiamata()"
           [tentaCountdown]="tentaCountdown"
@@ -268,6 +271,14 @@ export class AppComponent implements OnInit, OnDestroy {
    * Messaggio ricevuto via WebSocket dal backend.
    */
   private handleRealtimeMessage(messaggio: RealtimeMessage): void {
+    const contesto = messaggio.data?.CONTESTO;
+    if (contesto === 'SOLUZIONE'){
+        this.handleSoluzione(messaggio.data!);
+    } else if (contesto === 'CONSONANTE'){
+      this.handleChiamaConsonante(messaggio.data!);
+    } else if (contesto === 'VOCALE'){
+      this.handleCompraVocale(messaggio.data!);
+    }
     if (messaggio.tipo !== 'STATE' || !messaggio.data) {
       return;
     }
@@ -553,7 +564,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private stessoGiocatore(nome: string): boolean {
-    return !!this.giocatoreConnesso && nome.toUpperCase() === this.giocatoreConnesso.toUpperCase();
+    return !!this.giocatoreConnesso && nome.trim().toUpperCase() === this.giocatoreConnesso.trim().toUpperCase();
   }
 
   getTabellone(): Tabellone | undefined {
@@ -587,7 +598,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Se GiocatoreTurno è una stringa con il nome, cerca il giocatore nella lista
     if (typeof giocatore === 'string' && giocatore !== '--') {
       const giocatori = this.gameInfo?.Giocatori || [];
-      return giocatori.find(g => g.nome.toUpperCase() === giocatore.toUpperCase());
+      return giocatori.find(g => g.nome.trim().toUpperCase() === giocatore.trim().toUpperCase());
     }
     
     return undefined;
@@ -670,7 +681,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   giraRuota(): void {
     this.gameService.giraRuota().subscribe({
-      next: (data: SpinResponse) => {
+      next: (data: GameInfo) => {
         this.setGameInfo(data);
         this.ultimoSpicchio = data.SPICCHIO;
         this.showMessage(`Hai ottenuto: ${data.SPICCHIO}`, 'success');
@@ -688,18 +699,8 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.gameService.chiamaConsonante(consonante, this.ultimoSpicchio).subscribe({
-      next: (data: CallResponse) => {
-        this.setGameInfo(data);
-        let ret = 'Trovate ' + data.TROVATE + ' ' + consonante + '.';
-        if (data.PUNTI){
-          ret = ret + ' Punti '+data.PUNTI;
-        }
-        this.showMessage(ret, 'success');
-          if (data.SPICCHIO){
-            this.ultimoSpicchio = data.SPICCHIO;
-          } else{
-            this.ultimoSpicchio = undefined;
-          }
+      next: (data: GameInfo) => {
+        this.handleChiamaConsonante(data);
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore chiamata consonante', 'error');
@@ -709,11 +710,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   compraVocale(vocale: string): void {
     this.gameService.compraVocale(vocale).subscribe({
-      next: (data: CallResponse) => {
-        this.setGameInfo(data);
-        
-        this.showMessage(`Trovate ${data.TROVATE} ${vocale}.`, 'success');
-        this.ultimoSpicchio = undefined;
+      next: (data: GameInfo) => {
+        this.handleCompraVocale(data);
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore acquisto vocale', 'error');
@@ -721,27 +719,52 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  tentaSoluzione(soluzione: string): void {
-    this.gameService.tentaSoluzione(soluzione).subscribe({
-      next: (data: CallResponse) => {
+  handleCompraVocale(data: GameInfo): void {
         this.setGameInfo(data);
-        
+        this.showMessage(`Trovate ${data.TROVATE} ${data.VOCALE}.`, 'success');
+        this.ultimoSpicchio = undefined;
+  }
+
+  handleChiamaConsonante(data: GameInfo): void {
+        this.setGameInfo(data);
+        let ret = 'Trovate ' + data.TROVATE + ' ' + data.CONSONANTE + '.';
+        if (data.PUNTI){
+          ret = ret + ' Punti '+data.PUNTI;
+        }
+        this.showMessage(ret, 'success');
+          if (data.SPICCHIO){
+            this.ultimoSpicchio = data.SPICCHIO;
+          } else{
+            this.ultimoSpicchio = undefined;
+          }
+
+  }
+
+  handleSoluzione(data: GameInfo): void {
+        this.setGameInfo(data);
         if (data.FINE && data.FINE === 'OK') {
-          this.showMessage('🎉 FINE', 'success');
+          this.showMessage('🎉 FINE: ' + data.FRASE_TENTATA, 'success');
         } else {
         if (data.ESITO && data.ESITO === 'OK') {
-          this.showMessage('SOLUZIONE CORRETTA', 'success');
+          this.showMessage('SOLUZIONE CORRETTA: ' + data.FRASE_TENTATA, 'success');
           if (data.SPICCHIO){
             this.ultimoSpicchio = data.SPICCHIO;
           }
         } else {
-          this.showMessage('Soluzione errata', 'error');
+          this.showMessage('Soluzione errata: ' + data.FRASE_TENTATA, 'error');
         }
       }
         
       if (!data.SPICCHIO){
         this.ultimoSpicchio = undefined;
       }
+
+  }
+
+  tentaSoluzione(soluzione: string): void {
+    this.gameService.tentaSoluzione(soluzione).subscribe({
+      next: (data: GameInfo) => {
+        this.handleSoluzione(data);
       },
       error: (err) => {
         this.showMessage(err.error?.message || 'Errore tentativo soluzione', 'error');
@@ -750,9 +773,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   showMessage(text: string, type: string): void {
+    if (!text.trim()) {
+      return;
+    }
     this.lastMessage = { text, type };
     setTimeout(() => {
       this.lastMessage = undefined;
-    }, 50000);
+    }, 500000);
   }
 }

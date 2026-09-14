@@ -9,7 +9,7 @@ import { Giocatore } from '../models/game.model';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="azioni-section">
-      <div class="action-group" *ngIf="canPlay">
+      <div class="action-group" *ngIf="canPlay && ((fase === 'GIRA' && isAutoSingolaChiamata) || (fase === 'TENTA' && tentaTimerAttivo))">
         <div class="flex-column">
           <h2  *ngIf="giocatori && giocatori.length > 0 && 
             fase === 'GIRA' && isAutoSingolaChiamata && timerAttivo">
@@ -31,17 +31,7 @@ import { Giocatore } from '../models/game.model';
             (click)="startTimer()">
             ▶️ RIPRENDI TIMER
           </button>
-          <span
-            *ngIf="fase === 'GIRA' && !isAutoSingolaChiamata
-            || (fase === 'GIRA' && isAutoSingolaChiamata && !timerAttivo)
-            || tipoManche === 'DOPO_CAMPANELLA'
-            || fase === 'TENTA'
-            "
-          >
-
-
-
-<div class="action-group">
+              <div *ngIf="fase === 'TENTA' && tentaTimerAttivo">
     <div class="tenta-timer" *ngIf="fase === 'TENTA' && tentaTimerAttivo">
       <div class="tenta-countdown-text">
         ⏳ {{ tentaCountdown }}s per dare la soluzione!
@@ -50,7 +40,11 @@ import { Giocatore } from '../models/game.model';
         💡 DO LA SOLUZIONE
       </button>
     </div>
-    <div class="flex-row" *ngIf="!tentaTimerAttivo && fase!='FINE'">
+      </div>
+      </div>
+      </div>
+      <div class="solution-row" *ngIf="canPlay && puoAgire && !tentaTimerAttivo && !timerAttivo && (fase === 'GIRA' || tipoManche === 'DOPO_CAMPANELLA' || fase === 'TENTA') && (!isAutoSingolaChiamata || (giocatorePrenotato && giocatorePrenotato !== '--'))">
+        <div class="flex-row">
           <input 
             type="text" 
             [(ngModel)]="soluzione" 
@@ -64,17 +58,14 @@ import { Giocatore } from '../models/game.model';
           </button>
         </div>
       </div>
-          </span>
-        </div>
-      </div>
 
-      <div class="action-group" *ngIf="canPlay && !isAutoSingolaChiamata && tipoManche!='DOPO_CAMPANELLA'">
+      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && puoAgire && !isAutoSingolaChiamata && tipoManche !== 'DOPO_CAMPANELLA'">
         <h3>Gira la Ruota</h3>
         <div class="flex-row">
           <button 
             class="btn-primary btn-large" 
-            (click)="gira()"
-            [disabled]="fase !== 'GIRA' || !puoAgire">
+            [disabled]="!puoAgire"
+            (click)="gira()">
             🎰 GIRA LA RUOTA
           </button>
         </div>
@@ -84,7 +75,12 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'PARLA' && !isAutoSingolaChiamata">
+      <div class="spin-result standalone-spin-result" *ngIf="ultimoSpicchio && !(canPlay && fase === 'GIRA' && puoAgire && !isAutoSingolaChiamata && tipoManche !== 'DOPO_CAMPANELLA')">
+        <strong>Risultato:</strong>
+        <span class="spicchio-value">{{ ultimoSpicchio }}</span>
+      </div>
+
+      <div class="action-group" *ngIf="canPlay && isFase('PARLA') && puoAgire && !isAutoSingolaChiamata">
         <h3>Chiama Consonante</h3>
         <div class="vowels-grid">
           <button 
@@ -97,7 +93,7 @@ import { Giocatore } from '../models/game.model';
         </div>
       </div>
 
-      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && !isAutoSingolaChiamata">
+      <div class="action-group" *ngIf="canPlay && fase === 'GIRA' && puoAgire && !isAutoSingolaChiamata">
         <h3>Compra Vocale</h3>
         <div class="vowels-grid">
           <button 
@@ -139,6 +135,11 @@ import { Giocatore } from '../models/game.model';
       input {
         flex: 1;
       }
+    }
+
+    .solution-row {
+      padding-top: 12px;
+      margin-bottom: 20px;
     }
 
     .flex-column {
@@ -227,6 +228,7 @@ export class AzioniComponent {
   @Input() canPlay = false;
   @Input() ultimoSpicchio?: string | number;
   @Input() tipoManche?: string;
+  @Input() giocatorePrenotato?: string;
   @Input() timerAttivo = false;
   @Input() isAutoSingolaChiamata = false;
   @Input() tentaCountdown?: number;
@@ -254,6 +256,10 @@ export class AzioniComponent {
       return this.giocatori;
     }
     return this.giocatori.filter(g => g.nome.toUpperCase() === this.giocatoreConnesso!.toUpperCase());
+  }
+
+  isFase(fase: string): boolean {
+    return this.fase === fase;
   }
 
   gira(): void {

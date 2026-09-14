@@ -549,6 +549,7 @@ Passa
         int trovate = adaptLettera(consonante);
         int numero;
         Map<String, Object> ret = new LinkedHashMap<>();
+        ret.put("CONSONANTE", consonante);
         ret.put("TROVATE", trovate);
         if (trovato.equals(GameService.SpicchiCustom.JOLLY.name())) {
             if (trovate > 0) {
@@ -614,12 +615,14 @@ Passa
     }
 
     public Map<String, Object> compraVocale(Character vocale) {
+        Map<String, Object> ret = new HashMap<>();
         if (fase != Fase.GIRA) {
             throw new RuntimeException("Puoi girare solo se sei nella fase GIRA, ora sei in fase: " + fase.name());
         }
         if (isVocale(vocale) == false) {
             throw new RuntimeException("La vocale non è ammessa: " + vocale);
         }
+        ret.put("VOCALE", vocale);
         Giocatore giocatoreCorrente = getGiocatoreCorrente();
         if (giocatoreCorrente.getPuntiManche() < 500) {
             throw new RuntimeException("Non hai soldi a sufficienza: " + giocatoreCorrente.getPuntiManche());
@@ -629,7 +632,6 @@ Passa
         if (trovate == 0) {
             nextGiocatore();
         }
-        Map<String, Object> ret = new HashMap<>();
         ret.put("TROVATE", trovate);
         fase = Fase.GIRA;
         return ret;
@@ -637,6 +639,7 @@ Passa
 
     public Map<String, Object> soluzione(String soluzione) {
         Map ret = new HashMap();
+        ret.put("FRASE_TENTATA", soluzione);
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase()) || soluzione.equalsIgnoreCase("GIMMI")) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();

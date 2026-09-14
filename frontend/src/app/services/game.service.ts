@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { GameInfo, SpinResponse, CallResponse } from '../models/game.model';
+import { GameInfo } from '../models/game.model';
 
 @Injectable({
   providedIn: 'root'
@@ -24,24 +24,24 @@ export class GameService {
     return this.http.post<GameInfo>(`${this.apiUrl}/game`, { nome });
   }
 
-  giraRuota(forzato?: string): Observable<SpinResponse> {
+  giraRuota(forzato?: string): Observable<GameInfo> {
     let params = new HttpParams();
     if (forzato) {
       params = params.set('forzato', forzato);
     }
-    return this.http.get<SpinResponse>(`${this.apiUrl}/game/gira`, { params });
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/gira`, { params });
   }
 
-  chiamaConsonante(consonante: string, trovato: string | number): Observable<CallResponse> {
+  chiamaConsonante(consonante: string, trovato: string | number): Observable<GameInfo> {
     const params = new HttpParams()
       .set('consonante', consonante)
       .set('trovato', trovato.toString());
-    return this.http.get<CallResponse>(`${this.apiUrl}/game/consonante`, { params });
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/consonante`, { params });
   }
 
-  compraVocale(vocale: string): Observable<CallResponse> {
+  compraVocale(vocale: string): Observable<GameInfo> {
     const params = new HttpParams().set('vocale', vocale);
-    return this.http.get<CallResponse>(`${this.apiUrl}/game/vocale`, { params });
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/vocale`, { params });
   }
 
   /**
@@ -56,9 +56,9 @@ export class GameService {
     return this.http.get<GameInfo>(`${this.apiUrl}/game/autoSingolaChiamata`, { params });
   }
 
-  tentaSoluzione(soluzione: string): Observable<CallResponse> {
+  tentaSoluzione(soluzione: string): Observable<GameInfo> {
     const params = new HttpParams().set('soluzione', soluzione);
-    return this.http.get<CallResponse>(`${this.apiUrl}/game/soluzione`, { params });
+    return this.http.get<GameInfo>(`${this.apiUrl}/game/soluzione`, { params });
   }
 
   passa(): Observable<GameInfo> {

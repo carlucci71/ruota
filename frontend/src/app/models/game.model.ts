@@ -32,19 +32,16 @@ export interface GameInfo {
   GARAGE_USE?: boolean;
   RADDOPPIA_USE?: boolean;
   VALORE_CRESCE?: number;
-  [key: string]: any; // Per gestire chiavi dinamiche
-}
-
-export interface SpinResponse extends GameInfo {
-  SPICCHIO: string | number;
-}
-
-export interface CallResponse extends GameInfo {
+  FRASE_TENTATA?: string;
   ESITO?: string;
   FINE?: string;
   TROVATE?: string;
   PUNTI?: string;
+  CONTESTO?: string;
+  CONSONANTE?: string;
+  VOCALE?: string;
   SPICCHIO: string | number;
+  [key: string]: any; // Per gestire chiavi dinamiche
 }
 
 /**
