@@ -44,7 +44,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         sessioni.add(session);
         log.info("WebSocket connesso: {} (totale client: {})", session.getId(), sessioni.size());
-        inviaStato(session);
+        inviaStato(session, "AFTER_CONNECT");
     }
 
     @Override
@@ -55,7 +55,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             String azione = String.valueOf(richiesta.getOrDefault("action", ""));
             switch (azione) {
                 case "getState":
-                    inviaStato(session);
+                    inviaStato(session,"HANDLE_TEXT_MESSAGE");
                     break;
                 case "ping":
                     if (session.isOpen()) {
@@ -109,8 +109,12 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void inviaStato(WebSocketSession session) {
-        String json = serializza(gameService.buildInfo());
+    private void inviaStato(WebSocketSession session, String contesto) {
+        Map<String, Object> linked = new LinkedHashMap<>();
+        linked.put("CONTESTO", contesto);
+        Map<String, Object> payload = gameService.buildInfo();
+        linked.putAll(payload);
+        String json = serializza(linked);
         if (json == null) {
             return;
         }

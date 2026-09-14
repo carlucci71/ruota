@@ -531,6 +531,10 @@ Passa
         ret.put("TipoManche", manches.get(mancheCorrente).tipoManche);
         ret.put("CategoriaManche", manches.get(mancheCorrente).categoriaManche);
         ret.put("ValoreCresce", manches.get(mancheCorrente).valoreCresce);
+        if (!ObjectUtils.isEmpty(valoreUltimoGiro)) {
+            ret.put("SPICCHIO", valoreUltimoGiro);
+        }
+
 //        ret.put("PosLettere", posLettere);
         return ret;
     }
