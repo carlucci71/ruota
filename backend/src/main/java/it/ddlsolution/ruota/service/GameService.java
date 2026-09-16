@@ -335,9 +335,9 @@ public class GameService {
         raddoppiaUse = false;
         jollyUse = false;
         valoreUltimoGiro = null;
-        giocatoreIniziaManche =null;
-        mancheCorrente=null;
-        manches=new ArrayList<>();
+        giocatoreIniziaManche = null;
+        mancheCorrente = null;
+        manches = new ArrayList<>();
 
         fase = Fase.SETUP;
         for (Giocatore giocatore : giocatori) {
@@ -375,12 +375,12 @@ public class GameService {
         manches = List.of(
                 new Manche(CategoriaManche.PIATTI_ESTIVI, TipoManche.AUTO_SINGOLA_CHIAMATA, null, null, false),
                 new Manche(CategoriaManche.IN_FONDO_AL_MAR, TipoManche.STANDARD, 1000, null, false),
-                new Manche(CategoriaManche.TORMENTONI,TipoManche.STANDARD, 2000, null, false),
-                new Manche(CategoriaManche.CIAK_SI_GIRA,TipoManche.STANDARD, 3000, null, true),
-                new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE,TipoManche.STANDARD, 4000, null, false),
-                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false),
-                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false),
-                new Manche(CategoriaManche.TRIPLETE,TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false),
+                new Manche(CategoriaManche.TORMENTONI, TipoManche.STANDARD, 2000, null, false),
+                new Manche(CategoriaManche.CIAK_SI_GIRA, TipoManche.STANDARD, 3000, null, true),
+                new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE, TipoManche.STANDARD, 4000, null, false),
+                new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false),
+                new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false),
+                new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false),
                 new Manche(CategoriaManche.ULTIMO_TURNO, TipoManche.STANDARD, 5000, null, false)
         );
         mancheCorrente = 0;
@@ -581,7 +581,7 @@ Passa
 
         if (valoreUltimoGiro != null) {
             ret.put("SPICCHIO", valoreUltimoGiro);
-            if (trovate>0) {
+            if (trovate > 0) {
                 fase = Fase.TENTA;
             } else {
                 fase = Fase.PARLA;
@@ -643,13 +643,13 @@ Passa
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase()) || soluzione.equalsIgnoreCase("GIMMI")) {
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
-            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + giocatoreCorrente.getPuntiManche() + (mancheCorrente == manches.size() - 1 ? 0 : 1000));
+            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + Math.min(1000, giocatoreCorrente.getPuntiManche()));
             giocatoreCorrente.setPuntiManche(0);
 
             if (mancheCorrente == 0) {
-                giocatoreIniziaManche =giocatoreCorrente;
-            } else{
-                giocatoreIniziaManche =askNextGiocatore(giocatoreIniziaManche);
+                giocatoreIniziaManche = giocatoreCorrente;
+            } else {
+                giocatoreIniziaManche = askNextGiocatore(giocatoreIniziaManche);
             }
             if (mancheCorrente + 1 < manches.size()) {
                 mancheCorrente++;
@@ -753,8 +753,8 @@ Passa
         return ret;
     }
 
-    public Manche getMancheCorrente(){
-        if (ObjectUtils.isEmpty(manches)){
+    public Manche getMancheCorrente() {
+        if (ObjectUtils.isEmpty(manches)) {
             return null;
         }
         return manches.get(mancheCorrente);
