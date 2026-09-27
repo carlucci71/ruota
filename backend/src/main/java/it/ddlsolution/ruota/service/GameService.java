@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
@@ -23,6 +24,7 @@ import java.util.Set;
 @Service
 @Getter
 @RequiredArgsConstructor
+@Slf4j
 public class GameService {
     public final static char PLACEHOLDER = '-';
     private final Utility utility;
@@ -42,14 +44,15 @@ public class GameService {
     private int contaCiakUse;
     private int contaPopcornUse;
     private List<Integer> posizioniCinema;
-    List<Manche> manches = new ArrayList<>();
-    private Integer mancheCorrente;
+    List<Manche> manches;
+    private Integer progMancheCorrente;
+    private Map<Giocatore, Integer> contaTriplete;
     private int contaChiamateNascoste;
 
     private Giocatore getGiocatoreCorrente() {
         String nome;
-        if (manches.get(mancheCorrente).tipoManche == TipoManche.STANDARD
-                || manches.get(mancheCorrente).tipoManche == TipoManche.DOPO_CAMPANELLA
+        if (manches.get(progMancheCorrente).tipoManche == TipoManche.STANDARD
+                || manches.get(progMancheCorrente).tipoManche == TipoManche.DOPO_CAMPANELLA
         ) {
             nome = giocatoreTurno.getNome();
         } else {
@@ -59,9 +62,12 @@ public class GameService {
         return giocatoreCorrente;
     }
 
-    public void incrementaPuntiManche(int punti) {
-        Giocatore giocatoreCorrente = getGiocatoreCorrente();
-        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() + punti);
+    public void incrementaPuntiManche(Giocatore giocatore, int punti) {
+        giocatore.setPuntiManche(giocatore.getPuntiManche() + punti);
+    }
+
+    public void incrementaPuntiMancheGiocatoreCorrente(int punti) {
+        incrementaPuntiManche(getGiocatoreCorrente(),punti);
     }
 
     public void distribuisciPuntiManche() {
@@ -83,7 +89,7 @@ public class GameService {
         } else {
             giocatoreCorrente.setPuntiManche(0);
             giocatoreCorrente.setPuntiTotale(0);
-            nextGiocatore();
+            nextGiocatoreEGira();
         }
         fase = Fase.GIRA;
     }
@@ -105,24 +111,24 @@ public class GameService {
         List<Object> ruota = new ArrayList<>();
         for (int i = 0; i < ruotaBase.size(); i++) {
             Object spicchio = ruotaBase.get(i);
-            if (manches.get(mancheCorrente).isCinema && posizioniCinema != null && posizioniCinema.contains(i)) {
+            if (manches.get(progMancheCorrente).isCinema && posizioniCinema != null && posizioniCinema.contains(i)) {
                 spicchio = SpicchiCustom.CINEMA;
             }
             if (spicchio.equals(SpicchiCustom.GARAGE)) {
-                if (garageUse || mancheCorrente == manches.size() - 1) {
+                if (garageUse || progMancheCorrente == manches.size() - 1) {
                     spicchio = 500;
                 }
             }
             if (spicchio.equals(SpicchiCustom.JOLLY)) {
-                if (jollyUse || mancheCorrente == manches.size() - 1) {
+                if (jollyUse || progMancheCorrente == manches.size() - 1) {
                     spicchio = 100;
                 }
             }
             if (spicchio.equals(SpicchiCustom.CRESCE)) {
-                spicchio = manches.get(mancheCorrente).valoreCresce;
+                spicchio = manches.get(progMancheCorrente).valoreCresce;
             }
             if (spicchio.equals(SpicchiCustom.TRIPLO)) {
-                if (raddoppiaUse || mancheCorrente == manches.size() - 1) {
+                if (raddoppiaUse || progMancheCorrente == manches.size() - 1) {
                     spicchio = SpicchiCustom.BANCAROTTA;
                 }
             }
@@ -143,7 +149,7 @@ public class GameService {
             }
         }
         if (ottenuto.equals(SpicchiCustom.PASSA)) {
-            nextGiocatore();
+            nextGiocatoreEGira();
         }
         if (ottenuto.equals(SpicchiCustom.CINEMA)) {
             int ciak = 2 - contaCiakUse;
@@ -164,7 +170,7 @@ public class GameService {
             fase = Fase.GIRA;
         }
         if (ottenuto.equals(SpicchiCustom.CIAK)) {
-            incrementaPuntiManche(5000);
+            incrementaPuntiMancheGiocatoreCorrente(5000);
         }
         if (ottenuto.equals(SpicchiCustom.POPCORN)) {
             distribuisciPuntiManche();
@@ -336,7 +342,8 @@ public class GameService {
         jollyUse = false;
         valoreUltimoGiro = null;
         giocatoreIniziaManche = null;
-        mancheCorrente = null;
+        progMancheCorrente = null;
+        contaTriplete = new HashMap<>();
         manches = new ArrayList<>();
 
         fase = Fase.SETUP;
@@ -366,7 +373,7 @@ public class GameService {
             Triplete
             AUTO_SINGOLA_CHIAMATA
             AUTO_SINGOLA_CHIAMATA
-            AUTO_SINGOLA_CHIAMATA_NASCONDI
+            SUPER_FAST
 
             Ultimo Round
             5000
@@ -380,23 +387,27 @@ public class GameService {
                 new Manche(CategoriaManche.COMPITI_PER_LE_VACANZE, TipoManche.STANDARD, 4000, null, false),
                 new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA, null, 1, false),
                 new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA, null, 2, false),
-                new Manche(CategoriaManche.TRIPLETE, TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI, null, 3, false),
+                new Manche(CategoriaManche.TRIPLETE, TipoManche.SUPER_FAST, null, 3, false),
                 new Manche(CategoriaManche.ULTIMO_TURNO, TipoManche.STANDARD, 5000, null, false)
         );
-        mancheCorrente = 0;
+        progMancheCorrente = 0;
 
     }
 
-    public void nextGiocatore() {
+    public void nextGiocatoreEGira() {
         giocatoreTurno = askNextGiocatore(giocatoreTurno);
         fase = Fase.GIRA;
     }
 
     public Giocatore askNextGiocatore(Giocatore giocatore) {
+        log.info("next di {}",giocatore.getNome());
         List<Giocatore> list = new ArrayList<>(giocatori);
         int idx = list.indexOf(giocatore);
+        log.info("idx {}", idx);
         if (idx == -1) throw new NoSuchElementException();
-        return list.get((idx + 1) % list.size());
+        Giocatore giocatoreRet = list.get((idx + 1) % list.size());
+        log.info("ottiene {}",giocatoreRet.getNome());
+        return giocatoreRet;
     }
 
     public void addJollyGiocatore() {
@@ -454,10 +465,10 @@ public class GameService {
                     || gira == SpicchiCustom.JOLLY
             );
             valoreUltimoGiro = Integer.valueOf(gira.toString());
-            if (!valoreUltimoGiro.equals(manches.get(mancheCorrente).valoreCresce)) {
+            if (!valoreUltimoGiro.equals(manches.get(progMancheCorrente).valoreCresce)) {
                 valoreUltimoGiro = 1000 + valoreUltimoGiro;
             }
-            Manche manche = manches.get(mancheCorrente);
+            Manche manche = manches.get(progMancheCorrente);
             manche.tipoManche = TipoManche.DOPO_CAMPANELLA;
             fase = Fase.TENTA;
         }
@@ -477,10 +488,10 @@ public class GameService {
         setTabelloneTurno(tabellone);
         contaChiamateNascoste = 0;
         fase = Fase.GIRA;
-        if (mancheCorrente == manches.size() - 1) {
+        if (progMancheCorrente == manches.size() - 1) {
             sceltaUltimoGiro();
         }
-        if (manches.get(mancheCorrente).isCinema) {
+        if (manches.get(progMancheCorrente).isCinema) {
             contaCiakUse = 0;
             contaPopcornUse = 0;
             posizioniCinema = List.of(10, 18, 21);
@@ -528,9 +539,9 @@ Passa
         ret.put("GiocatoreTurno", getGiocatoreTurno() == null ? "--" : getGiocatoreTurno().getNome());
         ret.put("Giocatori", giocatori);
         ret.put("Fase", fase);
-        ret.put("TipoManche", manches.get(mancheCorrente).tipoManche);
-        ret.put("CategoriaManche", manches.get(mancheCorrente).categoriaManche);
-        ret.put("ValoreCresce", manches.get(mancheCorrente).valoreCresce);
+        ret.put("TipoManche", manches.get(progMancheCorrente).tipoManche);
+        ret.put("CategoriaManche", manches.get(progMancheCorrente).categoriaManche);
+        ret.put("ValoreCresce", manches.get(progMancheCorrente).valoreCresce);
         if (!ObjectUtils.isEmpty(valoreUltimoGiro)) {
             ret.put("SPICCHIO", valoreUltimoGiro);
         }
@@ -555,28 +566,28 @@ Passa
             if (trovate > 0) {
                 addJollyGiocatore();
             } else {
-                nextGiocatore();
+                nextGiocatoreEGira();
             }
         } else if (trovato.equals(GameService.SpicchiCustom.RADDOPPIA.name())) {
             if (trovate > 0) {
                 raddoppiaGiocatore();
             } else {
-                nextGiocatore();
+                nextGiocatoreEGira();
             }
         } else if (trovato.equals(GameService.SpicchiCustom.GARAGE.name())) {
             if (trovate > 0) {
                 garageGiocatore();
             } else {
-                nextGiocatore();
+                nextGiocatoreEGira();
             }
         } else {
             numero = Integer.parseInt(trovato.toString());
             int punti = numero * trovate;
-            incrementaPuntiManche(punti);
+            incrementaPuntiMancheGiocatoreCorrente(punti);
             ret.put("PUNTI", punti);
         }
         if (trovate == 0) {
-            nextGiocatore();
+            nextGiocatoreEGira();
         }
 
         if (valoreUltimoGiro != null) {
@@ -589,7 +600,7 @@ Passa
         } else {
             fase = Fase.GIRA;
         }
-        if (mancheCorrente == manches.size() - 1 && valoreUltimoGiro == null) {
+        if (progMancheCorrente == manches.size() - 1 && valoreUltimoGiro == null) {
             sceltaUltimoGiro();
             ret.put("SPICCHIO", valoreUltimoGiro);
         }
@@ -627,10 +638,10 @@ Passa
         if (giocatoreCorrente.getPuntiManche() < 500) {
             throw new RuntimeException("Non hai soldi a sufficienza: " + giocatoreCorrente.getPuntiManche());
         }
-        incrementaPuntiManche(-500);
+        incrementaPuntiMancheGiocatoreCorrente(-500);
         int trovate = adaptLettera(vocale);
         if (trovate == 0) {
-            nextGiocatore();
+            nextGiocatoreEGira();
         }
         ret.put("TROVATE", trovate);
         fase = Fase.GIRA;
@@ -641,18 +652,37 @@ Passa
         Map ret = new HashMap();
         ret.put("FRASE_TENTATA", soluzione);
         if (soluzione.equalsIgnoreCase(getTabelloneTurno().getFrase()) || soluzione.equalsIgnoreCase("GIMMI")) {
+            Manche mancheCorrente = getMancheCorrente();
             ret.put("ESITO", "OK");
             Giocatore giocatoreCorrente = getGiocatoreCorrente();
-            giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + Math.min(1000, giocatoreCorrente.getPuntiManche()));
-            giocatoreCorrente.setPuntiManche(0);
-
-            if (mancheCorrente == 0) {
+            if (mancheCorrente.getCategoriaManche() == CategoriaManche.TRIPLETE) {
+                int contaT = contaTriplete.getOrDefault(giocatoreCorrente, 0) + 1;
+                contaTriplete.put(giocatoreCorrente, contaT);
+                if (mancheCorrente.getMancheTriplete() < 3) {
+                    incrementaPuntiMancheGiocatoreCorrente(1000);
+                } else {
+                    if (contaT==3){
+                        giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + 5000);
+                        giocatoreCorrente.setPuntiManche(0);
+                    } else {
+                        giocatoreCorrente.setPuntiManche(giocatoreCorrente.getPuntiManche() + 1000);
+                        for (Giocatore giocatore : giocatori) {
+                            giocatore.setPuntiTotale(giocatore.getPuntiTotale()+giocatore.getPuntiManche());
+                            giocatore.setPuntiManche(0);
+                        }
+                    }
+                }
+            } else {
+                giocatoreCorrente.setPuntiTotale(giocatoreCorrente.getPuntiTotale() + Math.max(1000, giocatoreCorrente.getPuntiManche()));
+                giocatoreCorrente.setPuntiManche(0);
+            }
+            if (progMancheCorrente == 0) {
                 giocatoreIniziaManche = giocatoreCorrente;
             } else {
                 giocatoreIniziaManche = askNextGiocatore(giocatoreIniziaManche);
             }
-            if (mancheCorrente + 1 < manches.size()) {
-                mancheCorrente++;
+            if (progMancheCorrente + 1 < manches.size()) {
+                progMancheCorrente++;
                 avvia(giocatoreIniziaManche.getNome());
                 if (valoreUltimoGiro == null) {
                     fase = Fase.GIRA;
@@ -666,7 +696,7 @@ Passa
             }
         } else {
             ret.put("ESITO", "KO");
-            nextGiocatore();
+            nextGiocatoreEGira();
             if (valoreUltimoGiro == null) {
                 fase = Fase.GIRA;
             } else {
@@ -686,7 +716,7 @@ Passa
             throw new RuntimeException("Puoi passare solo se sei nella fase TENTA, ora sei in fase: " + fase.name());
         }
         ret.put("ESITO", "KO");
-        nextGiocatore();
+        nextGiocatoreEGira();
         fase = Fase.PARLA;
         return ret;
     }
@@ -703,7 +733,7 @@ Passa
             contaChiamateNascoste++;
         }
         if (contaChiamateNascoste == 10) {
-            Manche manche = manches.get(mancheCorrente);
+            Manche manche = manches.get(progMancheCorrente);
             manche.tipoManche = TipoManche.AUTO_SINGOLA_CHIAMATA;
             setTabelloneTurno(tabelloneTurno);
             contaChiamateNascoste = 0;
@@ -733,7 +763,7 @@ Passa
                 if ((isVocale && isVocale(carattere)) || (!isVocale && isConsonante(carattere))) {
                     lettera = carattere;
                 }
-            } while (lettera == null);
+            } while (lettera == null || posLettere.get(lettera)==null);
             List<Integer> posizioniLettera = posLettere.get(lettera);
             randomed = utility.randomUntil(posizioniLettera.size()) - 1;
             Integer posizione = posizioniLettera.get(randomed);
@@ -757,12 +787,12 @@ Passa
         if (ObjectUtils.isEmpty(manches)) {
             return null;
         }
-        return manches.get(mancheCorrente);
+        return manches.get(progMancheCorrente);
     }
 
     enum Fase {SETUP, GIRA, PARLA, FINE, TENTA}
 
-    public enum TipoManche {AUTO_SINGOLA_CHIAMATA, AUTO_SINGOLA_CHIAMATA_NASCONDI, STANDARD, DOPO_CAMPANELLA}
+    public enum TipoManche {AUTO_SINGOLA_CHIAMATA, SUPER_FAST, STANDARD, DOPO_CAMPANELLA}
 
     public enum SpicchiCustom {PASSA, GARAGE, TRIPLO, BANCAROTTA, JOLLY, CRESCE, RADDOPPIA, CINEMA, CIAK, POPCORN}
 

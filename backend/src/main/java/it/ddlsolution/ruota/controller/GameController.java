@@ -106,7 +106,7 @@ public class GameController {
         Map<String, Object> autoSingolaChiamata = new HashMap<>();
         GameService.Manche mancheCorrente = gameService.getMancheCorrente();
         if (!ObjectUtils.isEmpty(mancheCorrente) && (mancheCorrente.getTipoManche() == GameService.TipoManche.AUTO_SINGOLA_CHIAMATA
-                || mancheCorrente.getTipoManche() == GameService.TipoManche.AUTO_SINGOLA_CHIAMATA_NASCONDI)) {
+                || mancheCorrente.getTipoManche() == GameService.TipoManche.SUPER_FAST)) {
             autoSingolaChiamata = gameService.autoSingolaChiamata(nascondi);
         }
         Map<String, Object> ret = gameService.buildInfo();

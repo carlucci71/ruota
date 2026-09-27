@@ -31,7 +31,7 @@ export class RealtimeService {
   connect(): void {
     this.shouldReconnect = true;
     this.open();
-  }
+  } 
 
   /** Chiude la connessione (senza tentativi di riconnessione). */
   disconnect(): void {

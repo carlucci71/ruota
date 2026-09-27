@@ -364,7 +364,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   isAutoSingolaChiamata(): boolean {
-    return this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' || this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+    return this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA' || this.gameInfo?.TipoManche === 'SUPER_FAST';
   }
 
   private handleTipoManche(): void {
@@ -391,7 +391,7 @@ export class AppComponent implements OnInit, OnDestroy {
    */
   riprendiAutoSingolaChiamataLoop(): void {
     this.startAutoSingolaChiamataLoop();
-    const nascondi = this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+    const nascondi = this.gameInfo?.TipoManche === 'SUPER_FAST';
     this.gameService.autoSingolaChiamata(nascondi, true).subscribe({
       next: (data) => {
         this.setGameInfo(data);
@@ -412,7 +412,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.autoSingolaChiamataTimer = setInterval(() => {
-      const nascondi = this.gameInfo?.TipoManche === 'AUTO_SINGOLA_CHIAMATA_NASCONDI';
+      const nascondi = this.gameInfo?.TipoManche === 'SUPER_FAST';
       this.gameService.autoSingolaChiamata(nascondi).subscribe({
         next: (data) => {
           this.setGameInfo(data);
